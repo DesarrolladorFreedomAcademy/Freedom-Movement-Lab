@@ -9,8 +9,8 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/netlify": "^7.0.0",
     "@astrojs/node": "^9.5.4",
-    "@astrojs/vercel": "^10.0.0",
     "@mux/mux-node": "^12.8.1",
     "@mux/mux-player": "^3.11.5",
     "@mux/mux-uploader": "^1.4.1",
