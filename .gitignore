@@ -28,3 +28,9 @@ test_*.mjs
 test_*.js
 add_capitulos.mjs
 *.txt
+
+# carpeta temporal de supabase CLI
+supabase/.temp/
+
+# mockups e imágenes de diseño (no son código)
+mockups/

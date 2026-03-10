@@ -1,16 +1,19 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
-import netlify from '@astrojs/netlify';
+
+import node from '@astrojs/node';
 
 // https://astro.build/config
 export default defineConfig({
-  // SSR para API routes y páginas dinámicas
+  // Habilita SSR para API routes
   output: 'server',
 
   vite: {
     plugins: [tailwindcss()]
   },
 
-  adapter: netlify()
+  adapter: node({
+    mode: 'standalone'
+  })
 });
