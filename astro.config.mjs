@@ -1,19 +1,16 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
-
-import node from '@astrojs/node';
+import vercel from '@astrojs/vercel';
 
 // https://astro.build/config
 export default defineConfig({
-  // Habilita SSR para API routes
+  // SSR para API routes y páginas dinámicas
   output: 'server',
 
   vite: {
     plugins: [tailwindcss()]
   },
 
-  adapter: node({
-    mode: 'standalone'
-  })
+  adapter: vercel()
 });
