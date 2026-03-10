@@ -1,0 +1,639 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+import { supabase } from '../lib/supabase';
+
+// Intentar cargar datos del primer video "listo" de la BD o del especificado en la URL
+const url = new URL(Astro.request.url);
+const videoId = url.searchParams.get('id');
+
+let videoData: any = null;
+try {
+  let query = supabase
+    .from('videos')
+    .select('id, usuario_id, titulo, descripcion, instructor, duracion, dificultad, visualizaciones, mux_playback_id, creado_en')
+    .eq('estado', 'listo')
+    .limit(1);
+
+  if (videoId) {
+    query = query.eq('id', videoId);
+  }
+
+  const { data, error } = await query.single();
+
+  if (error) throw error;
+  videoData = data;
+} catch (e) {
+  console.error('Error o sin video listo en BD:', e);
+  // Si no hay video en BD, usamos los datos mockup
+}
+
+const VIDEO_DATA = {
+  id: videoData?.id || null,
+  usuario_id: videoData?.usuario_id || null,
+  title: videoData?.titulo || "Técnicas Avanzadas de Carrera por la Pared (Wall Run)",
+  views: videoData?.visualizaciones != null
+    ? videoData.visualizaciones.toLocaleString('es-ES') + ' visualizaciones'
+    : '0 visualizaciones',
+  date: videoData?.creado_en
+    ? new Date(videoData.creado_en).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+    : "12 de oct. de 2023",
+  tags: [videoData?.dificultad?.toUpperCase() || "AVANZADO", "BASES DEL PARKOUR"],
+  description: videoData?.descripcion || "En este tutorial avanzado, desglosamos la mecánica de la carrera vertical por la pared (wall run), enfocándonos en la colocación del pie, el impulso ascendente y la transición al salto de gato. También cubriremos estrategias de recuperación y errores comunes para entornos de gran altitud.",
+  muxPlaybackId: videoData?.mux_playback_id || null,
+  instructor: {
+    name: videoData?.instructor || "Alex Freedom",
+    title: "Lead Parkour Instructor • 128 Tutorials",
+    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(videoData?.instructor || 'Alex Freedom')}&background=0F172A&color=fff`
+  },
+  thumbnail: videoData?.mux_playback_id 
+    ? `https://image.mux.com/${videoData.mux_playback_id}/thumbnail.webp?time=1`
+    : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=1200&auto=format&fit=crop"
+};
+
+const timeToSeconds = (timeStr: string) => {
+  const parts = timeStr.split(':').map(Number);
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return parts[0] * 60 + parts[1];
+};
+
+const extractChapters = (desc: string) => {
+  if (!desc) return [];
+  const regex = /(?:^|\n)\s*(\d{1,2}:\d{2}(?::\d{2})?)\s+(.+)/g;
+  const chapters = [];
+  let match;
+  let id = 1;
+  while ((match = regex.exec(desc)) !== null) {
+    chapters.push({
+      id: id.toString().padStart(2, '0'),
+      time: match[1],
+      title: match[2].trim(),
+      seconds: timeToSeconds(match[1])
+    });
+    id++;
+  }
+  return chapters;
+};
+
+const CAPITULOS = extractChapters(VIDEO_DATA.description);
+
+// Cargar videos relacionados reales desde Supabase (excluyendo el actual)
+let upNextVideos: any[] = [];
+try {
+  let q = supabase
+    .from('videos')
+    .select('id, titulo, instructor, dificultad, mux_playback_id')
+    .eq('estado', 'listo')
+    .order('creado_en', { ascending: false })
+    .limit(5);
+
+  if (VIDEO_DATA.id) {
+    q = q.neq('id', VIDEO_DATA.id);
+  }
+
+  const { data: nextData } = await q;
+  upNextVideos = (nextData || []).slice(0, 4);
+} catch(e) {
+  console.error('Error cargando up next:', e);
+}
+---
+
+<!-- Nota: Usamos una variante especial de Layout que no tiene BottomNav en la vista de reproductor en móvil para más inmersión, pero para simplificar usamos el estándar por ahora y ocultamos cosas con CSS -->
+<Layout title={`${VIDEO_DATA.title} | Freedom VOD`}>
+  
+  <!-- Navegación condicional: Custom Mobile Topbar vs Normal Desktop Nav -->
+  
+  <!-- Custom Mobile Topbar para el Reproductor (Hidden on Desktop) -->
+  <div class="md:hidden sticky top-0 z-50 w-full bg-[#0b1016]/95 backdrop-blur-md border-b border-white/5 py-3 px-4 flex items-center justify-between">
+    <a href="/catalogo" class="text-white p-1 hover:bg-white/10 rounded-full transition-colors flex-shrink-0">
+      <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="19" y1="12" x2="5" y2="12"></line>
+        <polyline points="12 19 5 12 12 5"></polyline>
+      </svg>
+    </a>
+    <span class="font-bold text-base truncate mx-4 flex-grow text-center text-white">Freedom Academy</span>
+    <button class="text-white p-1 hover:bg-white/10 rounded-full transition-colors flex-shrink-0">
+      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+        <polyline points="16 6 12 2 8 6"></polyline>
+        <line x1="12" y1="2" x2="12" y2="15"></line>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Normal Desktop Nav (Hidden on Mobile) -->
+  <div class="hidden md:block">
+    <Nav />
+  </div>
+
+  <main class="w-full bg-[#0b1016] min-h-screen pb-24 md:pb-12 text-slate-200">
+    <div class="max-w-[1600px] mx-auto xl:px-8 xl:py-6">
+      <!-- Grid Principal: Player & Detalles Izquierda | Capítulos & Siguiente Derecha -->
+      <div class="flex flex-col lg:flex-row gap-6 xl:gap-8">
+        
+        <!-- Columna Izquierda: Reproductor, Título y Detalles -->
+        <div class="w-full lg:w-2/3 xl:w-[70%] xl:shrink-0 flex flex-col">
+          
+          <!-- Contenedor del Reproductor -->
+          <div class="w-full relative bg-black aspect-video xl:rounded-2xl overflow-hidden shadow-2xl group border-b md:border border-white/5 shadow-black/50">
+            
+            {VIDEO_DATA.muxPlaybackId ? (
+              // Reproductor Mux real (cuando hay vídeo en la BD)
+              <script is:inline src="https://cdn.jsdelivr.net/npm/@mux/mux-player"></script>
+              <mux-player
+                playback-id={VIDEO_DATA.muxPlaybackId}
+                metadata-video-title={VIDEO_DATA.title}
+                accent-color="#00A3FF"
+                style="width:100%; height:100%;"
+              ></mux-player>
+            ) : (
+              // Pantalla de demo / Mockup (sin vídeo en BD todavía)
+              <>
+                <img src={VIDEO_DATA.thumbnail} alt="Video Thumbnail" class="w-full h-full object-cover opacity-80 mix-blend-lighten" />
+                
+                <!-- Botón Grande de Play (Centro) -->
+                <div class="absolute inset-0 flex items-center justify-center">
+                  <div class="w-16 h-16 md:w-20 md:h-20 bg-[#00A3FF] rounded-full flex items-center justify-center text-white shadow-[0_0_30px_rgba(0,163,255,0.4)]">
+                    <svg class="w-8 h-8 md:w-10 md:h-10 ml-1.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                  </div>
+                </div>
+
+                <!-- Aviso Demo -->
+                <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur text-xs text-white/70 px-3 py-1.5 rounded-full whitespace-nowrap">
+                  Vista previa · Añade vídeos reales desde Mux
+                </div>
+              </>
+            )}
+          </div>
+
+          <!-- Detalles del Video -->
+          <div class="px-5 py-6 md:px-0">
+            <!-- Tags y Desktop Completado Button -->
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-4">
+               <div>
+                  <div class="flex flex-wrap items-center gap-2 mb-3">
+                    {VIDEO_DATA.tags.map(tag => (
+                      <span class={`text-[10px] md:text-xs font-black px-2 py-0.5 md:py-1 rounded uppercase tracking-wider ${tag === 'AVANZADO' ? 'bg-[#00A3FF] text-white shadow-[0_0_10px_rgba(0,163,255,0.3)]' : 'bg-slate-800 text-slate-300'}`}>{tag}</span>
+                    ))}
+                  </div>
+                  <h1 class="text-2xl md:text-3xl font-black text-white leading-tight">{VIDEO_DATA.title}</h1>
+               </div>
+
+               <!-- Botón Completado Mobile y Desktop (El de desktop está a la derecha del título, el de móvil baja abajo. Usaremos uno adaptativo) -->
+               <button id="btn-completar-desktop" class="btn-marcar-completado hidden md:flex btn-primary items-center gap-2 text-sm font-bold shadow-[0_0_20px_rgba(0,163,255,0.2)] whitespace-nowrap px-8 transition-colors">
+                  <svg class="w-5 h-5 bg-white text-[#00A3FF] rounded-full p-0.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span class="pointer-events-none text-btn">Marcar como Completado</span>
+               </button>
+            </div>
+
+            <div class="text-sm font-medium text-slate-400 mb-6 flex items-center gap-2">
+              <span class="flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span id="views-count">{VIDEO_DATA.views}</span>
+              </span>
+              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+              <span>{VIDEO_DATA.date}</span>
+            </div>
+
+            <!-- Controles de Creador (Se inyectan si el usuario activo es el dueño) -->
+            <div id="video-owner-controls" data-video-id={VIDEO_DATA.id} data-owner-id={VIDEO_DATA.usuario_id} class="hidden items-center gap-3 mb-6">
+              <button id="btn-edit-video" class="px-4 py-2 border border-[#00A3FF] text-[#00A3FF] hover:bg-[#00A3FF]/10 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar
+              </button>
+              <button id="btn-delete-video" class="px-4 py-2 border border-rose-500 text-rose-500 hover:bg-rose-500/10 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg> Eliminar
+              </button>
+            </div>
+
+            <!-- Mobile Info Card Instructor -->
+            <!-- En móvil el botón de seguir es grande, en PC es discreto a la derecha -->
+            <div class="bg-[#111C2A] md:bg-transparent border border-white/5 md:border-none p-4 md:p-0 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full overflow-hidden border border-[#00A3FF]/30 p-0.5 bg-[#111C2A]">
+                  <img src={VIDEO_DATA.instructor.avatar} alt={VIDEO_DATA.instructor.name} class="w-full h-full object-cover rounded-full" />
+                </div>
+                <div>
+                  <h3 class="font-bold text-white text-base leading-tight md:text-lg">{VIDEO_DATA.instructor.name}</h3>
+                  <p class="text-[11px] md:text-sm text-slate-400 font-medium uppercase md:normal-case tracking-widest md:tracking-normal">{VIDEO_DATA.instructor.title}</p>
+                </div>
+              </div>
+              <button class="md:hidden w-full text-center py-2 bg-transparent border border-white/10 hover:border-white/20 rounded-xl text-sm font-bold text-white transition-colors">
+                 Follow
+              </button>
+              <button class="hidden md:block px-6 py-2 border border-[#334155] hover:bg-[#334155] rounded-full text-sm font-bold text-white transition-colors">
+                 Follow
+              </button>
+            </div>
+            
+            <!-- Botón Completado gigante exclusivo Mobile -->
+            <button id="btn-completar-mobile" class="btn-marcar-completado md:hidden w-full btn-primary flex justify-center items-center gap-2 text-sm font-bold shadow-lg shadow-[#00A3FF]/20 mb-6 py-4 rounded-xl transition-colors">
+              <svg class="w-5 h-5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="16 8 12 16 8 13"/></svg>
+              <span class="pointer-events-none text-btn">Mark as Completed</span>
+            </button>
+
+            <!-- Decripción -->
+            <div class="text-[15px] leading-relaxed text-slate-300 w-full md:max-w-[90%] font-medium">
+              <p style="white-space: pre-line;">{VIDEO_DATA.description}</p>
+            </div>
+
+          </div>
+        </div>
+
+
+        <!-- Columna Derecha: Capítulos y Siguientes -->
+        <div class="w-full lg:w-1/3 xl:w-[30%] flex flex-col gap-6 px-5 lg:px-0">
+          
+          <!-- Móvil: Acordeón de capítulos vs Escritorio: Card Capítulos -->
+          {CAPITULOS.length > 0 && (
+            <div class="md:bg-[#111C2A] md:border border-white/5 md:rounded-2xl md:p-6 shadow-md">
+              
+              <!-- Cabecera -->
+              <div class="flex items-center justify-between mb-4 cursor-pointer md:cursor-default" id="mobile-chapters-toggle">
+                <h2 class="text-xl md:text-[17px] font-bold text-white flex items-center gap-2">
+                  <svg class="hidden md:block w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                  <span class="md:hidden">Video Chapters</span>
+                  <span class="hidden md:inline">Capítulos Actuales del Video</span>
+                </h2>
+                <!-- Flecha Acordeon Movil -->
+                <svg class="w-5 h-5 text-slate-400 md:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+              </div>
+
+              <!-- Lista -> Siempre visible en PC, colapsable en Móvil -->
+              <div class="flex flex-col gap-1 mt-2" id="mobile-chapters-list">
+                {CAPITULOS.map((cap, i) => (
+                  <button data-time={cap.seconds} class={`chapter-btn w-full text-left flex items-center justify-between p-3 rounded-lg overflow-hidden relative group hover:bg-white/5 transition-colors ${i === 0 ? 'is-active' : ''}`}>
+                    <!-- Borde Izquierdo Activo -->
+                    <div class="absolute left-0 top-0 bottom-0 w-1 bg-[#00A3FF] rounded-r opacity-0 indicator-border transition-opacity"></div>
+                    
+                    <div class="flex items-center gap-3 w-full pr-4">
+                      <span class={`indicator-time text-[11px] font-bold font-mono px-2 py-0.5 rounded text-slate-500 bg-black/20 group-hover:bg-black/30 transition-colors flex-shrink-0`}>{cap.time}</span>
+                      <span class={`indicator-title text-sm font-medium truncate text-slate-300 transition-colors pointer-events-none`}>{cap.title}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              
+              <div class="border-b border-white/5 my-6 md:hidden"></div>
+            </div>
+          )}
+
+
+          <!-- Next Videos -->
+          {upNextVideos.length > 0 && (
+          <div class="mt-2 md:mt-2">
+            <div class="flex justify-between items-end mb-5">
+               <h2 class="text-xl md:text-lg font-bold text-white">Siguiente</h2>
+            </div>
+
+            <div class="flex flex-col gap-4">
+               {upNextVideos.map(video => (
+                 <a href={`/reproductor?id=${video.id}`} class="flex gap-4 group cursor-pointer hover:bg-white/5 p-2 -mx-2 rounded-xl transition-colors">
+                   
+                   <div class="w-[140px] md:w-[160px] flex-shrink-0 aspect-video rounded-xl overflow-hidden relative border border-white/5 shadow-md">
+                     <img
+                       src={video.mux_playback_id ? `https://image.mux.com/${video.mux_playback_id}/thumbnail.webp?time=1` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=400&auto=format&fit=crop"}
+                       alt={video.titulo}
+                       class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                   </div>
+                   
+                   <div class="flex flex-col justify-start">
+                     <h3 class="text-sm md:text-[15px] font-bold text-slate-100 leading-tight mb-1 md:mb-2 group-hover:text-[#00A3FF] transition-colors line-clamp-2">
+                       {video.titulo}
+                     </h3>
+                     <span class="text-xs text-slate-400 font-medium">{video.instructor || 'Freedom Lab'}</span>
+                     <span class="text-[11px] text-slate-500 uppercase tracking-wider mt-1">{video.dificultad || 'VÍDEO'}</span>
+                   </div>
+
+                 </a>
+               ))}
+            </div>
+          </div>
+          )}
+          
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal para Editar Vídeo -->
+  <dialog id="edit-video-modal" class="bg-[#0b1016] text-white border border-white/10 rounded-2xl p-6 shadow-2xl backdrop-blur-xl w-[90%] max-w-[500px] m-auto">
+    <h2 class="text-2xl font-bold mb-4">Editar Vídeo</h2>
+    <form id="edit-video-form" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-semibold text-slate-400">Título</label>
+        <input type="text" name="titulo" class="bg-[#1E293B] border border-white/5 p-3 rounded-lg focus:outline-none focus:border-[#008AE6] transition-colors" value={VIDEO_DATA.title} required>
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-semibold text-slate-400">Descripción (Añade capítulos ej: "00:00 Intro")</label>
+        <textarea name="descripcion" class="bg-[#1E293B] border border-white/5 p-3 rounded-lg min-h-[150px] focus:outline-none focus:border-[#008AE6] transition-colors text-sm">{VIDEO_DATA.description}</textarea>
+      </div>
+      <div class="flex gap-4 mt-4 justify-end">
+        <button type="button" id="btn-close-modal" class="px-4 py-2 text-slate-400 hover:text-white transition-colors text-sm font-semibold">Cancelar</button>
+        <button type="submit" class="btn-primary px-6 py-2 rounded-xl text-sm font-bold">Guardar Cambios</button>
+      </div>
+    </form>
+  </dialog>
+</Layout>
+
+<style is:global>
+  dialog::backdrop {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+  }
+  /* Clases inyectadas por JS para el capitulo activo */
+  .chapter-btn.is-active {
+    background-color: rgba(0, 163, 255, 0.1);
+  }
+  .chapter-btn.is-active .indicator-border {
+    opacity: 1;
+  }
+  .chapter-btn.is-active .indicator-time {
+    background-color: #00A3FF;
+    color: white;
+  }
+  .chapter-btn.is-active .indicator-title {
+    color: white;
+  }
+</style>
+
+<script>
+  import { supabase } from '../lib/supabase';
+  // Script para manejar los capítulos interactivos y el evento del `<mux-player>`
+  const player = document.querySelector('mux-player') as any;
+  const chapterBtns = document.querySelectorAll('.chapter-btn');
+
+  if (chapterBtns.length > 0) {
+    // 1. Clickeo en el capítulo te lleva a ese tiempo
+    chapterBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const timeStr = btn.getAttribute('data-time');
+        if (timeStr && player) {
+          player.currentTime = Number(timeStr);
+          player.play();
+        }
+      });
+    });
+
+    // 2. Resaltar estado automático en base a la línea de tiempo del vídeo
+    if (player) {
+      player.addEventListener('timeupdate', () => {
+        const current = player.currentTime;
+        let activeIndex = 0;
+        
+        for (let i = 0; i < chapterBtns.length; i++) {
+          const t = Number(chapterBtns[i].getAttribute('data-time'));
+          if (current >= t) {
+            activeIndex = i;
+          } else {
+            break;
+          }
+        }
+
+        chapterBtns.forEach((btn, i) => {
+          if (i === activeIndex) {
+            btn.classList.add('is-active');
+          } else {
+            btn.classList.remove('is-active');
+          }
+        });
+      });
+    }
+  }
+
+  // Simple script for handling mobile chapters toggle logic
+  const toggleBtn = document.getElementById('mobile-chapters-toggle');
+  const list = document.getElementById('mobile-chapters-list');
+  
+  if (window.innerWidth < 768 && toggleBtn && list) {
+    toggleBtn.addEventListener('click', () => {
+       list.classList.toggle('hidden');
+    });
+  }
+
+  // --- Lógica de Edición y Borrado ---
+  const ownerControls = document.getElementById('video-owner-controls');
+  const videoId = ownerControls?.getAttribute('data-video-id');
+  const ownerId = ownerControls?.getAttribute('data-owner-id');
+  const btnEdit = document.getElementById('btn-edit-video');
+  const btnDelete = document.getElementById('btn-delete-video');
+  
+  const editModal = document.getElementById('edit-video-modal') as HTMLDialogElement;
+  const btnCloseModal = document.getElementById('btn-close-modal');
+  const editForm = document.getElementById('edit-video-form') as HTMLFormElement;
+
+  if (ownerControls && videoId && ownerId) {
+    // Comprobar si el usuario actual es el creador del video
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && session.user.id === ownerId) {
+        ownerControls.classList.remove('hidden');
+        ownerControls.classList.add('flex');
+      }
+    });
+
+    btnDelete?.addEventListener('click', async () => {
+      if (confirm('¿Estás seguro de que quieres eliminar este vídeo permanentemente?')) {
+        const { error } = await supabase.from('videos').delete().eq('id', videoId);
+        if (error) {
+          alert('Error eliminando vídeo: ' + error.message + '\nRecuerda haber aplicado las políticas RLS en Supabase.');
+        } else {
+          window.location.href = '/catalogo';
+        }
+      }
+    });
+
+    btnEdit?.addEventListener('click', () => {
+      editModal?.showModal();
+    });
+
+    btnCloseModal?.addEventListener('click', () => {
+      editModal?.close();
+    });
+
+    editForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(editForm);
+      const title = fd.get('titulo');
+      const desc = fd.get('descripcion');
+      
+      const { error } = await supabase
+        .from('videos')
+        .update({ titulo: title, descripcion: desc })
+        .eq('id', videoId);
+        
+      if (error) {
+        alert('Error actualizando vídeo: ' + error.message);
+      } else {
+        window.location.reload();
+      }
+    });
+  }
+
+  // ==== LÓGICA DE HISTORIAL Y PROGRESO (Seguir Viendo) ====
+  let currentUserId: string | null = null;
+  const currentVideoId = document.getElementById('video-owner-controls')?.getAttribute('data-video-id'); // Re-usamos este ID
+
+  let watchIntervalTimer: number | null = null;
+  let lastSavedTime = 0;
+  let dbCompletado = false; // estado actual devuelto por BD
+
+  async function initTracking() {
+    if (!currentVideoId || !player) return;
+    
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return; // Sólo guardamos progreso si hay cuenta
+
+    currentUserId = session.user.id;
+
+    // 1. Obtener si ya existe un registro de este video
+    const { data: historial } = await supabase
+      .from('historial_videos')
+      .select('tiempo_actual, completado')
+      .eq('usuario_id', currentUserId)
+      .eq('video_id', currentVideoId)
+      .single();
+
+    if (historial) {
+      dbCompletado = historial.completado || false;
+      // Reanudar tiempo si no estaba completado y el player esta listo
+      if (!dbCompletado && historial.tiempo_actual > 0) {
+        const resumeTime = Number(historial.tiempo_actual);
+        // Esperamos a que el player haga load
+        const setTimeToPlayer = () => {
+           if (player.duration > 0 && resumeTime < player.duration) {
+              player.currentTime = resumeTime;
+              lastSavedTime = resumeTime;
+           }
+           player.removeEventListener('loadedmetadata', setTimeToPlayer);
+        };
+        player.addEventListener('loadedmetadata', setTimeToPlayer);
+        if (player.readyState >= 1) setTimeToPlayer(); // Si ya estaba cargado
+      }
+
+      // Estilizar botones de "Completado" si ya lo estaba
+      if (dbCompletado) toggleCompletedUI(true);
+    }
+
+    // 2. Guardar progreso periódicamente mientras se reproduce
+    // Guardamos cada 5 segundos para no saturar DB
+    player.addEventListener('timeupdate', () => {
+      if (dbCompletado || !currentUserId) return; // Si ya completó, no machacamos el tiempo actual
+      
+      const currentTime = Math.floor(player.currentTime);
+      // Evitar llamadas infinitas, actualizar solo si han pasado > 5 seundos
+      if (Math.abs(currentTime - lastSavedTime) > 5) {
+        lastSavedTime = currentTime;
+        saveProgress(currentTime, false);
+      }
+    });
+
+    // 3. Manejar el Botón "Marcar como Completado"
+    const completeBtns = document.querySelectorAll('.btn-marcar-completado');
+    completeBtns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!currentUserId) return alert("Debes iniciar sesión para guardar progreso.");
+        
+        const isNowCompleted = !dbCompletado;
+        const timeToSave = isNowCompleted ? Math.floor(player.duration || player.currentTime || 0) : Math.floor(player.currentTime || 0);
+        
+        const btnSpans = document.querySelectorAll('.btn-marcar-completado .text-btn');
+        btnSpans.forEach(span => span.textContent = 'Guardando...');
+
+        const success = await saveProgress(timeToSave, isNowCompleted);
+        
+        if (success) {
+           dbCompletado = isNowCompleted;
+           toggleCompletedUI(dbCompletado);
+        } else {
+           // Error visual
+           btnSpans.forEach(span => span.textContent = 'Error');
+           setTimeout(() => toggleCompletedUI(dbCompletado), 2000);
+        }
+      });
+    });
+  }
+
+  function toggleCompletedUI(isCompleted: boolean) {
+     const completeBtns = document.querySelectorAll('.btn-marcar-completado');
+     completeBtns.forEach(btn => {
+        const span = btn.querySelector('.text-btn');
+        const icon = btn.querySelector('svg');
+        
+        if (isCompleted) {
+           btn.classList.replace('btn-primary', 'bg-emerald-500/20');
+           btn.classList.add('border', 'border-emerald-500/50', 'text-emerald-400');
+           if (icon) {
+             icon.classList.remove('bg-white', 'text-[#00A3FF]');
+             icon.classList.add('text-emerald-400');
+             icon.innerHTML = `<polyline points="20 6 9 17 4 12"/>`; // Check simple
+           }
+           if (span) span.textContent = 'Completado';
+        } else {
+           btn.className = btn.className.replace(/bg-emerald-500\/20|border|border-emerald-500\/50|text-emerald-400/g, '').trim();
+           btn.classList.add('btn-primary');
+           if (icon) {
+             icon.classList.add('bg-white', 'text-[#00A3FF]');
+             icon.classList.remove('text-emerald-400');
+             // Círculo por defecto en móvil o check relleno en pc
+             if (btn.id === 'btn-completar-mobile') icon.innerHTML = `<circle cx="12" cy="12" r="10"/><polyline points="16 8 12 16 8 13"/>`;
+             else icon.innerHTML = `<polyline points="20 6 9 17 4 12"/>`;
+           }
+           if (span) span.textContent = btn.id === 'btn-completar-mobile' ? 'Mark as Completed' : 'Marcar como Completado';
+        }
+     });
+  }
+
+  async function saveProgress(tiempo: number, isCompleted: boolean) {
+     if (!currentUserId || !currentVideoId) return false;
+     
+     const { error } = await supabase.from('historial_videos').upsert({
+        usuario_id: currentUserId,
+        video_id: currentVideoId,
+        tiempo_actual: tiempo,
+        completado: isCompleted,
+        actualizado_en: new Date().toISOString()
+     }, {
+        onConflict: 'usuario_id, video_id'
+     });
+
+     if (error) {
+       console.error("Error guardando progreso:", error);
+       return false;
+     }
+     return true;
+  }
+
+  // ==== VISUALIZACIONES ====
+  // Solo contamos una visualización cuando el usuario REPRODUCE el vídeo, no al abrir la página.
+  // El flag viewCounted evita contar múltiples veces si pausa y vuelve a dar play.
+  let viewCounted = false;
+
+  function registrarVisualizacion() {
+    if (viewCounted || !currentVideoId) return;
+    viewCounted = true;
+
+    supabase.rpc('incrementar_visualizacion', { video_uuid: currentVideoId })
+      .then(() => {
+        // Actualizar el contador en la UI de forma optimística
+        const viewsEl = document.getElementById('views-count');
+        if (viewsEl) {
+          const match = viewsEl.textContent?.match(/[\d.,]+/);
+          if (match) {
+            const current = parseInt(match[0].replace(/\./g, ''), 10) || 0;
+            viewsEl.textContent = (current + 1).toLocaleString('es-ES') + ' visualizaciones';
+          }
+        }
+      })
+      .catch((err: any) => console.warn('No se pudo registrar visualización:', err));
+  }
+
+  // Escuchar el evento 'play' del reproductor Mux (dispara al dar play, no al cargar)
+  if (player) {
+    player.addEventListener('play', registrarVisualizacion, { once: false });
+    // 'once: false' porque lo controlamos con viewCounted internamente
+  }
+
+  // Iniciar al cargar
+  initTracking();
+
+</script>

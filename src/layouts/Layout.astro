@@ -1,0 +1,34 @@
+---
+import '../styles/global.css';
+import BottomNav from '../components/BottomNav.astro';
+
+interface Props {
+	title: string;
+	description?: string;
+}
+
+const { title, description = "Aprende el flow urbano con traceurs de clase mundial." } = Astro.props;
+---
+
+<!doctype html>
+<html lang="es" class="dark">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title} | Freedom Movement Lab</title>
+		<meta name="description" content={description} />
+		
+		<!-- Google Fonts -->
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+	</head>
+	<body class="bg-[#0b1016] text-[#e2e8f0] font-sans antialiased overflow-x-hidden selection:bg-[#0EA5E9] selection:text-white pb-16 md:pb-0">
+		<slot />
+		
+		<!-- Mobile Bottom Navigation Layer -->
+		<BottomNav />
+	</body>
+</html>

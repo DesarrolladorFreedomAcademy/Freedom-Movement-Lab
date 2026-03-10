@@ -1,0 +1,188 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+
+
+import { supabase } from '../lib/supabase';
+
+// Consultar los videos reales desde Supabase
+let videosGuardados = [];
+try {
+  const { data, error } = await supabase
+    .from('videos')
+    .select('id, titulo, instructor, dificultad, creado_en, mux_playback_id')
+    .eq('estado', 'listo')
+    .order('creado_en', { ascending: false });
+    
+  if (error) throw error;
+  videosGuardados = data || [];
+} catch (e) {
+  console.error('Error al obtener catalogo de BD:', e);
+}
+
+// Convertir de formato BD a vista Front-end
+const talleresDeBD = videosGuardados.map((v: any) => ({
+  id: v.id,
+  titulo: v.titulo,
+  instructor: v.instructor || "Instructor Freedom",
+  foto_ins: `https://ui-avatars.com/api/?name=${encodeURIComponent(v.instructor || 'Instructor')}&background=0F172A&color=fff`,
+  dificultad: v.dificultad?.toUpperCase() || "INTERMEDIO",
+  duracion: "00:00", // En futuro se puede extraer desde Mux
+  color_dif: v.dificultad === 'PRINCIPIANTE' ? 'bg-emerald-500 text-white' : (v.dificultad === 'EXPERTO' ? 'bg-rose-500 text-white' : 'bg-[#00A3FF] text-white'),
+  thumb: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop"
+}));
+
+// Combinar los reales de DB (ahora sin datos falsos)
+const TALLERES = [...talleresDeBD];
+---
+
+<Layout title="Catálogo VOD">
+  <Nav />
+  
+  <div class="flex min-h-screen bg-[#0b1016]">
+    
+    <!-- Sidebar / Filtros (Fijo a la izquierda en Desktop) -->
+    <aside class="w-64 flex-shrink-0 border-r border-white/5 bg-[#0F172A] hidden lg:block sticky top-[73px] h-[calc(100vh-73px)] overflow-y-auto">
+      <div class="py-6 px-4">
+        
+        <!-- Biblioteca -->
+        <div class="mb-8">
+          <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-3">BIBLIOTECA</h3>
+          <ul class="space-y-1">
+            <li>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 bg-[#00A3FF]/10 text-[#00A3FF] rounded-xl font-medium transition-colors">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Lo más reciente
+              </a>
+            </li>
+            <li>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.5 4l-4 8h6l-4 8"/></svg>
+                Popular
+              </a>
+            </li>
+            <li>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                Mis Favoritos
+              </a>
+            </li>
+          </ul>
+        </div>
+        
+        <!-- CATEGORIES -->
+        <div>
+          <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-3">CATEGORIES</h3>
+          <ul class="space-y-1">
+            <li>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10 6 4 4-4 4"/><path d="M14 6h7v7"/><path d="m21 6-7 7"/><path d="m4 10 4-4 4 4"/></svg>
+                Atletismo
+              </a>
+            </li>
+            <li>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-4"/><path d="M12 2a9 9 0 0 0-9 9c0 5 9 11 9 11s9-6 9-11a9 9 0 0 0-9-9z"/><circle cx="12" cy="11" r="3"/></svg>
+                Mentalidad
+              </a>
+            </li>
+            <li>
+              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.5 12a5.5 5.5 0 0 1 11 0c0 4.5-4 5.5-4 5.5s-1-2.5-4-3.5a10.5 10.5 0 0 0-3 2z"/><path d="M12 12a5.5 5.5 0 0 1 11 0c0 4.5-4 5.5-4 5.5s-1-2.5-4-3.5a10.5 10.5 0 0 0-3 2z"/></svg>
+                Artes Creativas
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-8 animate-fade-in relative max-w-[1200px]">
+      
+      <!-- Top header y Título -->
+      <div class="mb-8">
+        <h1 class="text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">Todos los Talleres y Tutoriales</h1>
+        <p class="text-lg text-slate-400 font-medium">Domina tus habilidades con nuestras sesiones de alta intensidad dirigidas por expertos.</p>
+      </div>
+      
+      <!-- Filtros Laterales (Drop-downs) -->
+      <div class="flex flex-wrap items-center gap-4 mb-10">
+        <button class="bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2">
+           Dificultad
+           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <button class="bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2">
+           Categoría
+           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        <button class="bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2">
+           Instructor
+           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+        
+        <button class="text-[#00A3FF] hover:text-[#00E5FF] text-sm font-bold pl-2 transition-colors">
+          Borrar todo
+        </button>
+      </div>
+
+      <!-- Grid de Videos Catálogo -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+        {TALLERES.map((taller) => (
+          <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"} class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block">
+            
+            <!-- Thumbnail y Overlays -->
+            <div class="relative w-full aspect-[16/10] overflow-hidden">
+              <img src={taller.thumb} alt={taller.titulo} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              <!-- Grado Dificultad y duración (Esquina Inferior Izquierda) -->
+              <div class="absolute bottom-3 left-3 flex items-center gap-2 z-10 w-full px-1">
+                 <span class={`text-[10px] font-bold px-2.5 py-1 ${taller.color_dif} rounded uppercase tracking-wider shadow-md`}>
+                   {taller.dificultad}
+                 </span>
+                 <span class="text-[10px] font-bold px-2 py-1 bg-black/70 backdrop-blur rounded text-white border border-white/10 shadow-md">
+                   {taller.duracion}
+                 </span>
+              </div>
+              <!-- Play overlay transparente -->
+              <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                 <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 scale-90 group-hover:scale-100 transition-transform">
+                    <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                 </div>
+              </div>
+            </div>
+
+            <!-- Información (Cuerpo de la Tarjeta) -->
+            <div class="p-5">
+              <h3 class="text-lg font-bold text-slate-100 mb-4 leading-snug group-hover:text-[#00A3FF] transition-colors line-clamp-2">
+                {taller.titulo}
+              </h3>
+              
+              <div class="flex items-center gap-3">
+                <div class="w-7 h-7 rounded-full overflow-hidden border border-slate-700">
+                  <img src={taller.foto_ins} alt={taller.instructor} class="w-full h-full object-cover" />
+                </div>
+                <span class="text-sm font-medium text-slate-400">{taller.instructor}</span>
+              </div>
+            </div>
+
+          </a>
+        ))}
+      </div>
+
+      <!-- Cargar más botton -->
+      <div class="flex justify-center mb-20">
+        <button class="btn-primary flex items-center gap-2 text-[15px] px-8 py-3.5 shadow-[0_0_20px_rgba(0,163,255,0.3)]">
+          Cargar Más Talleres
+        </button>
+      </div>
+
+    </main>
+  </div>
+  
+  <footer class="border-t border-slate-800 bg-[#0F172A] relative z-10">
+    <div class="container xl:max-w-7xl mx-auto px-8 py-8 flex items-center justify-center text-xs text-slate-500 font-medium">
+      <p>© 2026 Freedom movement lab. Rompe los límites.</p>
+    </div>
+  </footer>
+</Layout>

@@ -1,0 +1,679 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+
+// Datos de Muestra - Perfil Fallback
+const horasTotales = 0; // Se reemplazará con la cifra real BD
+
+const user = {
+  name: "Alex Parker",
+  title: "Cargando Nivel...",
+  joined: "ene. 2023",
+  rank: 124,
+  isPro: true,
+  avatar: "https://ui-avatars.com/api/?name=Alex+Parker&background=00A3FF&color=fff&size=200",
+  hours: {
+    total: horasTotales,
+    weeklyIncrease: 5.2
+  },
+  skills: {
+    total: 20,
+    mastered: 15
+  },
+  streak: {
+    current: 12,
+    record: 12
+  }
+};
+
+const LOGROS = [
+  { id: 1, title: "Maestro del Backflip", date: "HACE 2 DÍAS", unlocked: true, icon: "flip" },
+  { id: 2, title: "Pro del Wall Run", date: "HACE 1 SEMANA", unlocked: true, icon: "wall" },
+  { id: 3, title: "Jefe del Kong Vault", date: "BLOQUEADO", unlocked: false, icon: "kong" }
+];
+
+const HISTORIAL = [
+  { id: 1, title: "Técnica Avanzada de Salto de Gato", type: "Lección VOD", duration: "24 mins", date: "HOY", status: "Completado", icon: "play" },
+  { id: 2, title: "Simulacro de Pliometría Explosiva", type: "Sesión de práctica", duration: "45 mins", date: "AYER", status: "Nivel 4", icon: "practice" },
+  { id: 3, title: "Fundamentos de Seguridad en el Aterrizaje", type: "Lección VOD", duration: "12 mins", date: "3 OCT", status: "Repaso", icon: "play" }
+];
+
+const PROGRESO_HABILIDADES = [
+  { name: "SALTOS DE OBSTÁCULOS (VAULTING)", percentage: 90 },
+  { name: "CARRERAS POR LA PARED (WALL RUNS)", percentage: 65 },
+  { name: "MORTALES Y CONCIENCIA AÉREA (FLIPS & AIR AWARENESS)", percentage: 40 }
+];
+---
+
+<Layout title="Mi Perfil">
+  <Nav />
+  
+  <main class="w-full min-h-screen pb-20 mt-8">
+    <div class="container mx-auto px-8 max-w-[1200px] animate-fade-in">
+      
+      <!-- User Info Header Card -->
+      <section class="bg-[#111C2A] border border-white/5 rounded-3xl p-8 mb-8 flex flex-col md:flex-row items-center justify-between shadow-xl shadow-black/20">
+        <div class="flex items-center gap-6">
+          <div class="relative">
+            <!-- Avatar Ring -->
+            <div class="w-28 h-28 rounded-full bg-gradient-to-tr from-[#00A3FF] to-[#00E5FF] p-1 shadow-[0_0_20px_rgba(0,163,255,0.4)]">
+              <div class="w-full h-full bg-[#0F172A] rounded-full overflow-hidden border-4 border-[#0F172A]">
+                <img id="profile-avatar" src={user.avatar} alt={user.name} class="w-full h-full object-cover" />
+              </div>
+            </div>
+            {user.isPro && (
+              <div class="absolute -bottom-2 right-2 bg-[#00A3FF] text-white text-xs font-black uppercase px-2 py-0.5 rounded shadow-lg border-2 border-[#111C2A]">
+                PRO
+              </div>
+            )}
+          </div>
+          
+          <div>
+            <h1 id="profile-name" class="text-3xl font-black text-white mb-1">{user.name}</h1>
+            <div class="flex items-center gap-2 text-[#00A3FF] font-medium mb-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg> 
+              <span id="profile-title">{user.title}</span>
+            </div>
+            <div class="text-sm font-medium text-slate-400 flex items-center gap-3">
+              <span id="profile-joined">Miembro desde {user.joined}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mt-6 md:mt-0">
+          <button id="btn-edit-profile" class="btn-primary flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            Editar Perfil
+          </button>
+        </div>
+      </section>
+
+      <!-- Stats Grid -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <!-- Horas de entrenamiento -->
+        <div class="bg-[#111C2A] border border-[#00A3FF]/20 rounded-2xl p-6 relative overflow-hidden group hover:border-[#00A3FF]/40 transition-colors">
+          <svg class="absolute right-[-10px] top-[-10px] w-32 h-32 text-slate-800/30 group-hover:text-slate-700/30 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          
+          <h3 class="text-xs font-bold text-slate-400 tracking-wider mb-2 relative z-10">HORAS DE ENTRENAMIENTO</h3>
+          <div id="profile-hours" class="text-5xl font-black text-white mb-2 relative z-10">{user.hours.total}</div>
+          <div class="flex items-end justify-between relative z-10">
+            <span class="text-sm font-semibold text-emerald-400 flex items-center gap-1">
+               <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
+              +{user.hours.weeklyIncrease}h esta semana
+            </span>
+            <!-- Mini Chart Mock -->
+            <div class="flex items-end gap-1 h-8">
+               <div class="w-2 bg-[#00A3FF]/40 h-[40%] rounded-t-sm"></div>
+               <div class="w-2 bg-[#00A3FF]/40 h-[60%] rounded-t-sm"></div>
+               <div class="w-2 bg-[#00A3FF]/60 h-[50%] rounded-t-sm"></div>
+               <div class="w-2 bg-[#00A3FF]/80 h-[80%] rounded-t-sm"></div>
+               <div class="w-2 bg-[#00A3FF] h-[100%] max-h-full rounded-t-sm shadow-[0_0_8px_#00A3FF]"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Habilidades Dominadas -->
+        <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-white/10 transition-colors">
+          <svg class="absolute right-[-10px] top-[-10px] w-32 h-32 text-slate-800/30 group-hover:text-slate-700/30 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+
+          <h3 class="text-xs font-bold text-slate-400 tracking-wider mb-2 relative z-10">HABILIDADES DOMINADAS</h3>
+          <div class="flex items-baseline gap-1 relative z-10">
+            <span class="text-5xl font-black text-white">{user.skills.mastered}</span>
+            <span class="text-2xl font-bold text-slate-500">/{user.skills.total}</span>
+          </div>
+          
+          <div class="mt-4 flex items-center justify-between relative z-10">
+             <span class="text-sm font-semibold text-[#00A3FF]">+{Math.round((user.skills.mastered / user.skills.total) * 100)}% Completado</span>
+             <!-- Circular Progress Mock -->
+             <div class="relative w-12 h-12 flex items-center justify-center">
+               <svg class="w-full h-full transform -rotate-90">
+                 <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" fill="transparent" class="text-slate-700" />
+                 <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" fill="transparent" class="text-[#00A3FF]" stroke-dasharray="125" stroke-dashoffset={125 - (125 * 0.75)} stroke-linecap="round" />
+               </svg>
+               <span class="absolute text-[10px] font-bold text-white">75%</span>
+             </div>
+          </div>
+        </div>
+
+        <!-- Racha Semanal -->
+        <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-white/10 transition-colors">
+           <svg class="absolute right-[-10px] top-[-10px] w-32 h-32 text-slate-800/30 group-hover:text-slate-700/30 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+
+          <h3 class="text-xs font-bold text-slate-400 tracking-wider mb-2 relative z-10">RACHA SEMANAL</h3>
+          <div class="flex items-baseline gap-2 relative z-10 mb-2">
+             <span class="text-5xl font-black text-white">{user.streak.current}</span>
+             <span class="text-lg font-bold text-slate-500">Days</span>
+          </div>
+          
+          <div class="flex items-center justify-between mt-4 relative z-10">
+            <span class="text-sm font-bold text-orange-500 flex items-center gap-1">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+              ¡Mejor marca personal!
+            </span>
+            <!-- Dots Mock -->
+            <div class="flex gap-1">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#00A3FF] shadow-[0_0_8px_#00A3FF]"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#00A3FF] shadow-[0_0_8px_#00A3FF]"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-[#00A3FF] shadow-[0_0_8px_#00A3FF]"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
+              <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Grid 2 cols for Logros y Historial -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+        
+        <!-- Mis Logros -->
+        <div>
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold flex items-center gap-2 text-white">
+              <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M19 4H5c-1.1 0-2 .9-2 2v4c0 4.4 3.6 8 8 8s8-3.6 8-8V6c0-1.1-.9-2-2-2z"/></svg>
+              Mis Logros
+            </h2>
+            <a href="#" class="text-sm font-semibold text-[#00A3FF] hover:text-[#00E5FF] transition-colors">Ver Todo</a>
+          </div>
+
+          <div class="grid grid-cols-3 gap-4">
+            {LOGROS.map((logro) => (
+              <div class={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all cursor-pointer ${logro.unlocked ? 'bg-[#111C2A] border-[#00A3FF]/20 hover:border-[#00A3FF]/50 shadow-lg shadow-[#00A3FF]/5' : 'bg-[#0F172A] border-white/5 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}`}>
+                 <div class={`w-14 h-14 rounded-full flex items-center justify-center mb-3 ${logro.unlocked ? 'bg-[#00A3FF]/10 text-[#00A3FF] border border-[#00A3FF]/30 shadow-[0_0_15px_rgba(0,163,255,0.2)]' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}>
+                   {logro.icon === 'flip' && <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>}
+                   {logro.icon === 'wall' && <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>}
+                   {logro.icon === 'kong' && <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
+                 </div>
+                 <h3 class="text-[11px] md:text-xs font-bold text-center text-white mb-1 leading-tight">{logro.title}</h3>
+                 <span class="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-slate-500">{logro.unlocked ? `DESBLOQUEADO` : 'BLOQUEADO'}</span>
+                 {logro.unlocked && <span class="text-[9px] text-slate-600 mt-0.5">{logro.date}</span>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- Historial de Entrenamiento -->
+        <div>
+           <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold flex items-center gap-2 text-white">
+              <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Historial de Entrenamiento
+            </h2>
+            <a href="#" class="text-sm font-semibold text-[#00A3FF] hover:text-[#00E5FF] transition-colors text-right">Registros<br/>completos</a>
+          </div>
+
+          <div class="space-y-3">
+            {HISTORIAL.map((item) => (
+              <div class="flex items-center gap-4 bg-[#111C2A] border border-white/5 p-4 rounded-2xl hover:bg-slate-800 transition-colors cursor-pointer group">
+                <div class={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${item.icon === 'play' ? 'bg-[#00A3FF]/10 text-[#00A3FF]' : 'bg-[#00E5FF]/10 text-[#00E5FF]'}`}>
+                   {item.icon === 'play' ? 
+                     <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> :
+                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10 6 4 4-4 4"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                   }
+                </div>
+                
+                <div class="flex-grow min-w-0">
+                  <h4 class="font-bold text-sm text-slate-100 truncate group-hover:text-[#00A3FF] transition-colors">{item.title}</h4>
+                  <div class="text-xs text-slate-400 mt-1 flex gap-2 items-center">
+                    <span>{item.type}</span>
+                    <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+                    <span>{item.duration}</span>
+                    <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+                    <span class="text-slate-300">{item.status}</span>
+                  </div>
+                </div>
+                
+                <div class="text-xs font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">
+                  {item.date}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <!-- Progreso de Habilidades -->
+      <section>
+        <div class="flex items-center mb-6">
+          <h2 class="text-xl font-bold flex items-center gap-2 text-white">
+            <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Progreso de Habilidades
+          </h2>
+        </div>
+
+        <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-6 md:p-8 space-y-6">
+          {PROGRESO_HABILIDADES.map((skill) => (
+            <div>
+              <div class="flex justify-between text-xs font-bold text-slate-400 mb-2 tracking-widest uppercase">
+                <span>{skill.name}</span>
+                <span class="text-white">{skill.percentage}%</span>
+              </div>
+              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden shadow-inner">
+                 <div class="h-full bg-gradient-to-r from-[#00A3FF] to-[#00E5FF] rounded-full transition-all duration-1000 ease-out" style={`width: ${skill.percentage}%`}></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- ===== PANEL INSTRUCTOR / ADMIN: Subida de Vídeos ===== -->
+      <!-- Oculto por defecto, sólo visible si rol = instructor | admin -->
+      <section id="upload-panel" class="hidden mt-12 mb-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-8 h-8 rounded-full bg-[#00A3FF]/10 border border-[#00A3FF]/30 flex items-center justify-center text-[#00A3FF]">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          </div>
+          <h2 class="text-xl md:text-2xl font-bold text-white">Panel de Instructor — Subir Vídeo</h2>
+          <span class="text-[10px] font-black uppercase tracking-wider bg-[#00A3FF]/10 text-[#00A3FF] border border-[#00A3FF]/30 px-2 py-0.5 rounded">Acceso Restringido</span>
+        </div>
+
+        <div class="bg-[#111C2A] border border-white/5 rounded-3xl p-6 md:p-8 space-y-6">
+          
+          <!-- Estado del proceso -->
+          <div id="upload-status" class="hidden items-center gap-3 p-4 rounded-xl border">
+            <div id="upload-spinner" class="w-5 h-5 border-2 border-[#00A3FF] border-t-transparent rounded-full animate-spin hidden"></div>
+            <svg id="upload-check" class="w-5 h-5 text-emerald-400 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="16 8 12 16 8 13"/></svg>
+            <svg id="upload-error-icon" class="w-5 h-5 text-red-400 hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            <p id="upload-status-text" class="text-sm font-medium text-slate-300"></p>
+          </div>
+
+          <!-- Formulario de Metadatos -->
+          <form id="upload-form" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Título del vídeo *</label>
+              <input id="field-titulo" type="text" required placeholder="Ej: Fundamentos del Kong Vault" class="input-dark w-full" />
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Descripción</label>
+              <textarea id="field-descripcion" rows="3" placeholder="Descripción breve del contenido del vídeo..." class="input-dark w-full resize-none"></textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Instructor</label>
+              <div class="flex items-center gap-3 bg-[#1E293B] border border-white/5 p-2.5 rounded-lg opacity-80 select-none">
+                 <img id="upload-instructor-avatar" src="" alt="Instructor" class="w-7 h-7 rounded-full object-cover">
+                 <span id="upload-instructor-name" class="text-sm font-bold text-white"></span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Dificultad</label>
+              <select id="field-dificultad" class="input-dark w-full">
+                <option value="PRINCIPIANTE">Principiante</option>
+                <option value="INTERMEDIO">Intermedio</option>
+                <option value="AVANZADO">Avanzado</option>
+                <option value="EXPERTO">Experto</option>
+              </select>
+            </div>
+
+            <!-- Zona de arrastre de vídeo -->
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Archivo de Vídeo *</label>
+              <div id="drop-zone" class="relative border-2 border-dashed border-white/10 hover:border-[#00A3FF]/40 rounded-2xl p-10 text-center transition-colors cursor-pointer group">
+                <input id="file-input" type="file" accept="video/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
+                <svg class="w-12 h-12 mx-auto mb-4 text-slate-600 group-hover:text-[#00A3FF]/60 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="m21 15-5-5-5 5"/><path d="M16 10v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9"/><rect x="3" y="3" width="18" height="5" rx="1"/>
+                </svg>
+                <p class="text-slate-300 font-medium mb-1">Arrastra tu vídeo aquí</p>
+                <p class="text-slate-500 text-sm">o haz clic para seleccionar desde tu equipo</p>
+                <p id="selected-file-name" class="mt-3 text-xs text-[#00A3FF] hidden font-mono"></p>
+              </div>
+              
+              <!-- Barra de progreso subida -->
+              <div id="progress-container" class="hidden mt-4">
+                <div class="flex justify-between text-xs font-medium text-slate-400 mb-1">
+                  <span>Subiendo a Mux...</span>
+                  <span id="progress-pct">0%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                  <div id="progress-bar" class="h-full bg-gradient-to-r from-[#00A3FF] to-[#00E5FF] rounded-full transition-all duration-300" style="width:0%"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <button type="submit" id="upload-btn" class="btn-primary w-full flex items-center justify-center gap-2 py-4">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                Subir Vídeo al Catálogo
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Modal Editar Perfil -->
+  <dialog id="edit-profile-modal" class="bg-[#0b1016] text-white border border-white/10 rounded-2xl p-6 shadow-2xl backdrop-blur-xl w-[90%] max-w-[400px] m-auto">
+    <h2 class="text-2xl font-bold mb-4">Editar Perfil</h2>
+    <form id="edit-profile-form" class="flex flex-col gap-4">
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-semibold text-slate-400">Nombre Visible</label>
+        <input type="text" id="edit-name-input" class="bg-[#1E293B] border border-white/5 p-3 rounded-lg focus:outline-none focus:border-[#008AE6] transition-colors" required>
+      </div>
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-semibold text-slate-400">Foto de Perfil</label>
+        <div class="flex items-center gap-4">
+          <input type="file" id="edit-avatar-upload" accept="image/png, image/jpeg, image/webp" class="bg-[#1E293B] border border-white/5 p-2 rounded-lg text-sm w-full file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-[#00A3FF]/10 file:text-[#00A3FF] hover:file:bg-[#00A3FF]/20">
+        </div>
+        <div class="flex items-center justify-between mt-1">
+          <p class="text-[11px] text-slate-500">Sube una imagen desde tu dispositivo (.jpg, .png).</p>
+          <button type="button" id="btn-remove-avatar" class="text-[11px] font-bold text-rose-500 hover:text-rose-400 hidden">Eliminar foto actual</button>
+        </div>
+      </div>
+      <div id="edit-profile-error" class="hidden text-sm font-bold text-rose-500 mt-2 bg-rose-500/10 p-2 rounded border border-rose-500/20">Error</div>
+      
+      <div class="flex gap-4 mt-4 justify-end">
+        <button type="button" id="btn-close-profile-modal" class="px-4 py-2 text-slate-400 hover:text-white transition-colors text-sm font-semibold">Cancelar</button>
+        <button type="submit" id="btn-save-profile" class="btn-primary px-6 py-2 rounded-xl text-sm font-bold">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <footer class="border-t border-slate-800 bg-[#0F172A]">
+    <div class="container mx-auto px-8 py-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 font-medium">
+      <p>© 2026 Freedom movement lab. Rompe los límites.</p>
+      <div class="flex gap-6 mt-4 md:mt-0">
+        <a href="#" class="hover:text-white transition-colors">Privacidad</a>
+        <a href="#" class="hover:text-white transition-colors">Términos</a>
+        <a href="#" class="hover:text-white transition-colors">Soporte</a>
+      </div>
+    </div>
+  </footer>
+</Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  // Lógica del Enfoque 1: Clásico Parkour / Traceur (Cliente)
+  function obtenerTituloPorHoras(horas: number) {
+    if (horas < 10) return "Aprendiz de Movimiento";
+    if (horas < 30) return "Traceur en Formación";
+    if (horas < 70) return "Traceur";
+    if (horas < 150) return "Traceur Avanzado";
+    if (horas < 500) return "Traceur de Élite";
+    return "Maestro del Movimiento";
+  }
+
+  async function loadUserProfile() {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (session && session.user) {
+      const meta = session.user.user_metadata;
+      
+      const nameEl = document.getElementById('profile-name');
+      const avatarEl = document.getElementById('profile-avatar') as HTMLImageElement;
+      const titleEl = document.getElementById('profile-title');
+      const hoursEl = document.getElementById('profile-hours');
+      const joinedEl = document.getElementById('profile-joined');
+      
+      // Fallback: Si no hay full_name usa el email antes del @
+      const nombreUsuario = meta?.full_name || session.user.email?.split('@')[0] || 'Usuario';
+      const defaultAvatarUrl = meta?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(nombreUsuario)}&background=00A3FF&color=fff&size=200`;
+      
+      if (nameEl) nameEl.textContent = nombreUsuario;
+      if (avatarEl) avatarEl.src = defaultAvatarUrl;
+
+      // ---- Lógica del Modal (Pop-up) de Edición de Perfil ----
+      const btnEditProfile = document.getElementById('btn-edit-profile');
+      const editModal = document.getElementById('edit-profile-modal') as HTMLDialogElement;
+      const btnCloseProfileModal = document.getElementById('btn-close-profile-modal');
+      const editForm = document.getElementById('edit-profile-form') as HTMLFormElement;
+      const idNameMap = document.getElementById('edit-name-input') as HTMLInputElement;
+      const avatarUpload = document.getElementById('edit-avatar-upload') as HTMLInputElement;
+      const btnRemoveAvatar = document.getElementById('btn-remove-avatar') as HTMLButtonElement;
+      const errBox = document.getElementById('edit-profile-error');
+      const btnSave = document.getElementById('btn-save-profile') as HTMLButtonElement;
+
+      let fileToRemove = false; // Bandera para saber si borraran la foto manualmente
+
+      if (btnEditProfile && editModal && editForm) {
+        btnEditProfile.addEventListener('click', () => {
+          idNameMap.value = nombreUsuario;
+          avatarUpload.value = ''; // Limpiar input file
+          fileToRemove = false;
+          
+          if (meta?.avatar_url) {
+             btnRemoveAvatar.classList.remove('hidden');
+          } else {
+             btnRemoveAvatar.classList.add('hidden');
+          }
+
+          if (errBox) errBox.classList.add('hidden');
+          editModal.showModal();
+        });
+
+        btnRemoveAvatar.addEventListener('click', () => {
+          fileToRemove = true;
+          avatarUpload.value = '';
+          btnRemoveAvatar.classList.add('hidden');
+          btnRemoveAvatar.textContent = 'Borrando...';
+        });
+
+        btnCloseProfileModal?.addEventListener('click', () => {
+          editModal.close();
+        });
+
+        editForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          btnSave.disabled = true;
+          btnSave.textContent = 'Guardando...';
+
+          let updName = idNameMap.value.trim();
+          let finalAvatarUrl = meta?.avatar_url || null; // Por defecto la actual si no se toca
+          const file = avatarUpload?.files?.[0];
+
+          if (fileToRemove) {
+             finalAvatarUrl = null;
+          }
+
+          // Si seleccionan archivo nuevo, subir a storage
+          if (file) {
+             btnSave.textContent = 'Subiendo imagen...';
+             const fileExt = file.name.split('.').pop();
+             const fileName = `user-${session.user.id}-${Date.now()}.${fileExt}`;
+
+             const { data: uploadData, error: uploadError } = await supabase.storage
+               .from('avatars')
+               .upload(fileName, file, { upsert: true });
+
+             if (uploadError) {
+               if (errBox) {
+                 errBox.classList.remove('hidden');
+                 errBox.textContent = 'Error subiendo la imagen al Bucket: ' + uploadError.message;
+                 btnSave.disabled = false;
+                 btnSave.textContent = 'Guardar';
+               }
+               return; // Detenemos
+             }
+
+             // Obtener url publica real (no expirada)
+             const { data: { publicUrl } } = supabase.storage
+               .from('avatars')
+               .getPublicUrl(fileName);
+
+             finalAvatarUrl = `${publicUrl}?t=${Date.now()}`; // añadir t para recargar la cache imagen nueva
+          }
+
+          btnSave.textContent = 'Guardando datos...';
+          const { error } = await supabase.auth.updateUser({
+            data: { 
+              full_name: updName,
+              avatar_url: finalAvatarUrl 
+            }
+          });
+
+          if (error) {
+             if (errBox) {
+               errBox.classList.remove('hidden');
+               errBox.textContent = 'Hubo un error al actualizar tu perfil: ' + error.message;
+             }
+             btnSave.disabled = false;
+             btnSave.textContent = 'Guardar';
+          } else {
+             window.location.reload(); 
+          }
+        });
+      }
+      // --------------------------------------------------------
+      
+      if (joinedEl && session.user.created_at) {
+        const fecha = new Date(session.user.created_at);
+        const mes = fecha.toLocaleString('es-ES', { month: 'short' }).replace('.', '');
+        const anio = fecha.getFullYear();
+        joinedEl.textContent = `Miembro desde ${mes}. ${anio}`;
+      }
+
+      // 1. Obtener datos extra desde Supabase -> Tabla "perfiles" (horas + rol)
+      try {
+        const { data: perfilData } = await supabase
+          .from('perfiles')
+          .select('horas_entrenamiento, rol')
+          .eq('id', session.user.id)
+          .single();
+          
+        const horasTotales = perfilData?.horas_entrenamiento || 0;
+
+        if (hoursEl) hoursEl.textContent = horasTotales.toString();
+        if (titleEl) titleEl.textContent = obtenerTituloPorHoras(horasTotales);
+
+        // Si el usuario es instructor o admin → mostrar panel de subida
+        const rol = perfilData?.rol || 'usuario';
+        if (rol === 'instructor' || rol === 'admin') {
+          const uploadPanel = document.getElementById('upload-panel');
+          if (uploadPanel) {
+            uploadPanel.classList.remove('hidden');
+            uploadPanel.classList.add('block');
+          }
+          inicializarUploader(session.user.id, nombreUsuario, defaultAvatarUrl);
+        }
+        
+      } catch (err) {
+        console.error("No se pudo cargar perfil BD", err);
+      }
+    }
+  }
+
+  // ===== Lógica del Uploader de Vídeo =====
+  function inicializarUploader(usuarioId: string, instructorName: string, instructorAvatar: string) {
+    const form = document.getElementById('upload-form') as HTMLFormElement;
+    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+    const fileNameEl = document.getElementById('selected-file-name');
+    const progressContainer = document.getElementById('progress-container');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPct = document.getElementById('progress-pct');
+    const uploadBtn = document.getElementById('upload-btn') as HTMLButtonElement;
+    const statusEl = document.getElementById('upload-status');
+    const statusText = document.getElementById('upload-status-text');
+    const spinner = document.getElementById('upload-spinner');
+    const checkIcon = document.getElementById('upload-check');
+    const errorIcon = document.getElementById('upload-error-icon');
+
+    // UI readonly del Instructor
+    const uploaderAvatar = document.getElementById('upload-instructor-avatar') as HTMLImageElement;
+    const uploaderName = document.getElementById('upload-instructor-name');
+    if (uploaderAvatar) uploaderAvatar.src = instructorAvatar;
+    if (uploaderName) uploaderName.textContent = instructorName;
+
+    // Mostrar nombre del archivo seleccionado
+    fileInput?.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (file && fileNameEl) {
+        fileNameEl.textContent = `📎 ${file.name}`;
+        fileNameEl.classList.remove('hidden');
+      }
+    });
+
+    function setStatus(tipo: 'loading' | 'success' | 'error', mensaje: string) {
+      if (!statusEl || !statusText) return;
+      statusEl.classList.remove('hidden');
+      statusEl.classList.add('flex');
+      statusText.textContent = mensaje;
+
+      spinner?.classList.toggle('hidden', tipo !== 'loading');
+      checkIcon?.classList.toggle('hidden', tipo !== 'success');
+      errorIcon?.classList.toggle('hidden', tipo !== 'error');
+
+      const colores = {
+        loading: 'border-[#00A3FF]/20 bg-[#00A3FF]/5',
+        success: 'border-emerald-400/20 bg-emerald-400/5',
+        error: 'border-red-400/20 bg-red-400/5',
+      };
+      statusEl.className = statusEl.className.replace(/border-\S+|bg-\S+/g, '').trim();
+      statusEl.classList.add(...colores[tipo].split(' '));
+    }
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const titulo = (document.getElementById('field-titulo') as HTMLInputElement)?.value;
+      const descripcion = (document.getElementById('field-descripcion') as HTMLTextAreaElement)?.value;
+      const instructor = instructorName; // Se asigna automáticamente del usuario autenticado
+      const dificultad = (document.getElementById('field-dificultad') as HTMLSelectElement)?.value;
+      const archivo = fileInput?.files?.[0];
+
+      if (!titulo || !archivo) {
+        setStatus('error', 'El título y el archivo de vídeo son obligatorios.');
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      setStatus('loading', 'Solicitando URL de subida a Mux...');
+
+      try {
+        // Obtener el token de la sesión actual para enviarlo al servidor
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const accessToken = currentSession?.access_token || '';
+
+        // 1. Solicitar URL de subida a nuestro API endpoint
+        const res = await fetch('/api/upload-video', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ titulo, descripcion, instructor, dificultad, usuarioId }),
+        });
+
+        if (!res.ok) throw new Error('No se pudo obtener la URL de subida.');
+
+        const { uploadUrl } = await res.json();
+
+        // 2. Subir el archivo directamente a Mux usando XHR (para progreso real)
+        setStatus('loading', 'Subiendo vídeo a Mux...');
+        progressContainer?.classList.remove('hidden');
+
+        await new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('PUT', uploadUrl);
+          xhr.setRequestHeader('Content-Type', archivo.type);
+
+          xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+              const pct = Math.round((e.loaded / e.total) * 100);
+              if (progressBar) progressBar.style.width = `${pct}%`;
+              if (progressPct) progressPct.textContent = `${pct}%`;
+            }
+          });
+
+          xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) resolve();
+            else reject(new Error(`Error de subida: ${xhr.status}`));
+          };
+          xhr.onerror = () => reject(new Error('Error de red al subir el archivo.'));
+          xhr.send(archivo);
+        });
+
+        setStatus('success', '¡Vídeo subido con éxito! Mux lo está procesando. Estará disponible en el catálogo en unos minutos.');
+        form.reset();
+        if (fileNameEl) fileNameEl.classList.add('hidden');
+        progressContainer?.classList.add('hidden');
+
+      } catch (err: any) {
+        setStatus('error', `Error: ${err.message}`);
+      } finally {
+        uploadBtn.disabled = false;
+      }
+    });
+  }
+
+  loadUserProfile();
+</script>

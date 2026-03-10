@@ -1,0 +1,270 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+
+// Datos Mockup - Mi Entrenamiento
+const CONTINUAR_VIENDO = [
+  {
+    titulo: "Fuerza Estructural para Impactos Largos",
+    instructor: "David Belle",
+    duracion: "45:10",
+    progreso: 65, // porcentaje
+    tiempo_restante: "15 min restantes",
+    thumb: "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?q=80&w=600&auto=format&fit=crop"
+  },
+  {
+    titulo: "Fundamentos de Resiliencia Mental",
+    instructor: "Sarah Miller",
+    duracion: "22:00",
+    progreso: 30,
+    tiempo_restante: "18 min restantes",
+    thumb: "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=600&auto=format&fit=crop"
+  },
+  {
+    titulo: "Transiciones de precisión en altura",
+    instructor: "Alex Freedom",
+    duracion: "18:45",
+    progreso: 85,
+    tiempo_restante: "2 min restantes",
+    thumb: "https://images.unsplash.com/photo-1517436073-3b1b1b01ba32?q=80&w=600&auto=format&fit=crop"
+  }
+];
+
+const MIS_COLECCIONES = [
+  {
+    titulo: "Bases del Movimiento Urbano",
+    videos_count: 12,
+    ultima_act: "Hace 2 días",
+    thumb: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=400&auto=format&fit=crop"
+  },
+  {
+    titulo: "Entrenamiento de Flexibilidad Semanal",
+    videos_count: 5,
+    ultima_act: "Ayer",
+    thumb: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=400&auto=format&fit=crop"
+  }
+];
+
+const GUARDADOS = [
+  {
+    titulo: "Poder Explosivo: Calistenia",
+    instructor: "Marcus Thorne",
+    dificultad: "INTERMEDIO",
+    duracion: "24:15",
+    thumb: "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=600&auto=format&fit=crop"
+  },
+  {
+    titulo: "Biomecánica del Aterrizaje",
+    instructor: "Dra. Elena Costa",
+    dificultad: "EXPERTO",
+    duracion: "1hr 20m",
+    thumb: "https://images.unsplash.com/photo-1552674605-1a134ab79888?q=80&w=600&auto=format&fit=crop"
+  }
+];
+---
+
+<Layout title="Mi Entrenamiento">
+  <Nav />
+  
+  <main class="w-full min-h-screen pb-20 md:pb-12 bg-[#0b1016]">
+    <div class="container mx-auto px-5 md:px-8 max-w-[1200px] animate-fade-in mt-8 md:mt-12">
+      
+      <!-- Cabecera -->
+      <header class="mb-10 lg:mb-14">
+        <h1 class="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight">Mi Entrenamiento</h1>
+        <p class="text-slate-400 font-medium md:text-lg">Tu espacio personal para seguir creciendo. Retoma donde lo dejaste.</p>
+        
+        <!-- Pestañas Rápidas (Desktop + Móvil scrollable) -->
+        <div class="mt-8 flex items-center gap-6 border-b border-white/10 pb-4 overflow-x-auto no-scrollbar mask-fade-right">
+          <button class="text-[#00A3FF] font-bold border-b-2 border-[#00A3FF] pb-4 -mb-4 whitespace-nowrap">Dashboard</button>
+          <button class="text-slate-400 hover:text-white font-medium pb-4 -mb-4 transition-colors whitespace-nowrap">Historial Completo</button>
+          <button class="text-slate-400 hover:text-white font-medium pb-4 -mb-4 transition-colors whitespace-nowrap">Mis Listas</button>
+          <button class="text-slate-400 hover:text-white font-medium pb-4 -mb-4 transition-colors whitespace-nowrap hidden md:block">Descargas</button>
+        </div>
+      </header>
+
+      <!-- Hero Tracker (El video más importante del usuario ahora mismo) -->
+      <section class="mb-16">
+        <div class="relative w-full rounded-3xl overflow-hidden bg-[#111C2A] border border-white/5 group shadow-2xl flex flex-col md:flex-row">
+           <div class="w-full md:w-[60%] lg:w-[65%] relative aspect-video md:aspect-[16/9] overflow-hidden">
+             <!-- Thumbnail -->
+             <img src={CONTINUAR_VIENDO[0].thumb} alt="Continuar viendo principal" class="w-full h-full object-cover opacity-80 mix-blend-lighten group-hover:scale-105 transition-transform duration-700" />
+             <!-- Play flotante -->
+             <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                 <div class="w-16 h-16 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20 scale-95 group-hover:scale-110 group-hover:bg-[#00A3FF] group-hover:border-[#00A3FF] transition-all duration-300 shadow-xl">
+                    <svg class="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                 </div>
+             </div>
+             <!-- Barra de progreso pegada abajo de la imagen -->
+             <div class="absolute bottom-0 left-0 w-full h-1.5 bg-black/60 backdrop-blur-sm z-10">
+               <div class="h-full bg-[#00A3FF] shadow-[0_0_10px_#00A3FF]" style={`width: ${CONTINUAR_VIENDO[0].progreso}%`}></div>
+             </div>
+           </div>
+           
+           <div class="p-6 md:p-8 flex flex-col justify-center w-full md:w-[40%] lg:w-[35%]">
+             <span class="text-xs font-bold text-[#00A3FF] tracking-widest uppercase mb-3 flex items-center gap-2">
+               <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+               Siguiente Reto
+             </span>
+             <h2 class="text-2xl md:text-3xl font-black text-white leading-tight mb-2 line-clamp-3">{CONTINUAR_VIENDO[0].titulo}</h2>
+             <p class="text-slate-400 font-medium mb-8 text-sm">{CONTINUAR_VIENDO[0].instructor} • {CONTINUAR_VIENDO[0].tiempo_restante}</p>
+             
+             <a href="/reproductor" class="btn-primary w-full text-center flex items-center justify-center gap-2 text-[15px] py-3.5 shadow-[0_0_20px_rgba(0,163,255,0.2)]">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                Continuar Clase
+             </a>
+           </div>
+        </div>
+      </section>
+
+      <!-- Grid de Continuar Viendo (El resto) -->
+      <section class="mb-16">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-white">
+             Continuar Viendo
+          </h3>
+          <button class="text-sm font-semibold text-[#00A3FF] hover:text-[#00E5FF] transition-colors">Ver todos</button>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+           {CONTINUAR_VIENDO.slice(1).map(video => (
+             <a href="/reproductor" class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group cursor-pointer block">
+               
+               <div class="relative w-full aspect-video overflow-hidden">
+                 <img src={video.thumb} alt={video.titulo} class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500" />
+                 
+                 <!-- Progress Bar Overlay -->
+                 <div class="absolute bottom-0 left-0 w-full h-1 bg-black/60 z-10">
+                   <div class="h-full bg-[#00A3FF]" style={`width: ${video.progreso}%`}></div>
+                 </div>
+
+                 <!-- Overlay Hover -->
+                 <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div class="w-12 h-12 rounded-full bg-black/50 backdrop-blur text-white flex items-center justify-center border border-white/20">
+                      <svg class="w-5 h-5 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                 </div>
+               </div>
+
+               <div class="p-4 md:p-5">
+                 <h4 class="text-base font-bold text-slate-100 mb-1 leading-snug group-hover:text-[#00A3FF] transition-colors line-clamp-2">
+                   {video.titulo}
+                 </h4>
+                 <div class="flex justify-between items-center mt-3">
+                   <p class="text-xs font-medium text-slate-400">{video.instructor}</p>
+                   <p class="text-[11px] font-bold text-slate-500">{video.tiempo_restante}</p>
+                 </div>
+               </div>
+               
+             </a>
+           ))}
+        </div>
+      </section>
+
+      <!-- Mis Listas y Favoritos Grid 2 Cols (Desktop) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 mb-16">
+        
+        <!-- Mis Colecciones -->
+        <section>
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-white">
+               Mis Colecciones
+            </h3>
+            <button class="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+             {MIS_COLECCIONES.map(lista => (
+               <div class="relative aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden group border border-white/5 shadow-lg cursor-pointer">
+                  <!-- Imágenes apiladas simuladas -->
+                  <div class="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/40 to-transparent z-10 w-full h-full"></div>
+                  <img src={lista.thumb} alt={lista.titulo} class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80" />
+                  
+                  <div class="absolute bottom-0 left-0 w-full p-4 z-20">
+                     <h4 class="font-bold text-white text-sm sm:text-base leading-snug mb-1 drop-shadow-md">{lista.titulo}</h4>
+                     <p class="text-[11px] text-slate-300 font-medium flex items-center gap-1.5">
+                       <svg class="w-3 h-3 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                       {lista.videos_count} videos
+                     </p>
+                  </div>
+                  
+                  <!-- Play all layer -->
+                  <div class="absolute inset-x-0 top-0 h-1/2 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center">
+                    <span class="text-xs font-bold text-white tracking-widest uppercase bg-black/50 backdrop-blur px-3 py-1.5 rounded flex items-center gap-2">
+                       <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Reproducir todo
+                    </span>
+                  </div>
+               </div>
+             ))}
+          </div>
+        </section>
+
+        <!-- Talleres Guardados (Bookmarks) -->
+        <section>
+          <div class="flex items-center justify-between mb-6">
+            <h3 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-white">
+               Guardados
+            </h3>
+            <button class="text-sm font-semibold text-slate-400 hover:text-white transition-colors">Ver todos</button>
+          </div>
+
+          <div class="flex flex-col gap-3">
+             {GUARDADOS.map(guardado => (
+               <a href="/reproductor" class="flex gap-4 p-3 pr-4 rounded-2xl border border-transparent hover:border-white/10 hover:bg-[#111C2A] transition-colors group">
+                 <div class="w-32 md:w-40 aspect-video rounded-xl overflow-hidden flex-shrink-0 relative">
+                   <img src={guardado.thumb} class="w-full h-full object-cover" />
+                   <div class="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                     {guardado.duracion}
+                   </div>
+                 </div>
+                 
+                 <div class="flex flex-col justify-center flex-grow min-w-0 flex-shrink">
+                   <h4 class="font-bold text-sm md:text-base text-slate-100 mb-1 leading-snug group-hover:text-[#00A3FF] truncate">{guardado.titulo}</h4>
+                   <p class="text-xs text-slate-400 font-medium mb-1.5">{guardado.instructor}</p>
+                   <div>
+                     <span class="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded uppercase bg-slate-800 text-slate-300">
+                       {guardado.dificultad}
+                     </span>
+                   </div>
+                 </div>
+                 
+                 <div class="hidden sm:flex self-center pl-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white">
+                      <!-- Bookmark icon -->
+                      <svg class="w-4 h-4 fill-current text-[#00A3FF]" viewBox="0 0 24 24" stroke="currentColor" stroke-width="0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 4h6a2 2 0 0 1 2 2v14l-5 -3l-5 3v-14a2 2 0 0 1 2 -2" /></svg>
+                    </button>
+                 </div>
+               </a>
+             ))}
+          </div>
+        </section>
+
+      </div>
+      
+    </div>
+  </main>
+
+  <footer class="border-t border-slate-800 bg-[#0F172A] relative z-10 hidden md:block">
+    <div class="container xl:max-w-[1200px] mx-auto px-8 py-8 flex items-center justify-center text-xs text-slate-500 font-medium">
+      <p>© 2026 Freedom movement lab. Rompe los límites.</p>
+    </div>
+  </footer>
+</Layout>
+
+<style>
+  /* Ocultar barra de scroll en los tabs de navegación de la cabecera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  /* Mascara para difuminado al final del scroll horizontal */
+  .mask-fade-right {
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  }
+</style>
