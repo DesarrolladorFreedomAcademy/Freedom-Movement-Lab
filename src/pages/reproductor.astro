@@ -207,7 +207,7 @@ try {
 
             <!-- Mobile Info Card Instructor -->
             <!-- En móvil el botón de seguir es grande, en PC es discreto a la derecha -->
-            <div class="bg-[#111C2A] md:bg-transparent border border-white/5 md:border-none p-4 md:p-0 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8">
+            <div class="bg-[#111C2A] md:bg-transparent border border-white/5 md:border-none p-4 md:p-0 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8" data-instructor-name={VIDEO_DATA.instructor.name}>
               <div class="flex items-center gap-4">
                 <div class="w-12 h-12 rounded-full overflow-hidden border border-[#00A3FF]/30 p-0.5 bg-[#111C2A]">
                   <img src={VIDEO_DATA.instructor.avatar} alt={VIDEO_DATA.instructor.name} class="w-full h-full object-cover rounded-full" />
@@ -217,11 +217,11 @@ try {
                   <p class="text-[11px] md:text-sm text-slate-400 font-medium uppercase md:normal-case tracking-widest md:tracking-normal">{VIDEO_DATA.instructor.title}</p>
                 </div>
               </div>
-              <button class="md:hidden w-full text-center py-2 bg-transparent border border-white/10 hover:border-white/20 rounded-xl text-sm font-bold text-white transition-colors">
-                 Follow
+              <button class="btn-follow-instructor md:hidden w-full text-center py-2 bg-transparent border border-white/10 hover:border-white/20 rounded-xl text-sm font-bold text-white transition-all" data-instructor={VIDEO_DATA.instructor.name}>
+                <span class="follow-text">Seguir</span>
               </button>
-              <button class="hidden md:block px-6 py-2 border border-[#334155] hover:bg-[#334155] rounded-full text-sm font-bold text-white transition-colors">
-                 Follow
+              <button class="btn-follow-instructor hidden md:flex items-center gap-2 px-6 py-2 border border-[#334155] hover:bg-[#334155] rounded-full text-sm font-bold text-white transition-all" data-instructor={VIDEO_DATA.instructor.name}>
+                <span class="follow-text">Seguir</span>
               </button>
             </div>
             
@@ -632,6 +632,101 @@ try {
     player.addEventListener('play', registrarVisualizacion, { once: false });
     // 'once: false' porque lo controlamos con viewCounted internamente
   }
+
+  // ==== LÓGICA DE SEGUIR / DEJAR DE SEGUIR INSTRUCTOR ====
+  const followBtns = document.querySelectorAll('.btn-follow-instructor');
+  let isFollowing = false;
+
+  function updateFollowUI(following: boolean) {
+    isFollowing = following;
+    followBtns.forEach(btn => {
+      const textEl = btn.querySelector('.follow-text');
+      if (following) {
+        btn.classList.add('!border-emerald-500/50', '!bg-emerald-500/10', '!text-emerald-400');
+        btn.classList.remove('hover:bg-[#334155]', 'hover:border-white/20');
+        if (textEl) textEl.textContent = '✓ Siguiendo';
+      } else {
+        btn.classList.remove('!border-emerald-500/50', '!bg-emerald-500/10', '!text-emerald-400');
+        btn.classList.add('hover:bg-[#334155]', 'hover:border-white/20');
+        if (textEl) textEl.textContent = 'Seguir';
+      }
+    });
+  }
+
+  async function initFollowState() {
+    if (followBtns.length === 0) return;
+    
+    const instructorName = followBtns[0].getAttribute('data-instructor');
+    if (!instructorName) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    const userId = session.user.id;
+
+    // Comprobar si ya sigue al instructor
+    try {
+      const { data } = await supabase
+        .from('seguimientos')
+        .select('id')
+        .eq('usuario_id', userId)
+        .eq('instructor_nombre', instructorName)
+        .single();
+
+      if (data) updateFollowUI(true);
+    } catch (e) {
+      // No lo sigue o tabla no existe, mantener estado por defecto
+    }
+
+    // Event listeners para los botones
+    followBtns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (!currentSession?.user) {
+          window.location.href = '/login';
+          return;
+        }
+
+        const uid = currentSession.user.id;
+
+        // Feedback visual inmediato
+        followBtns.forEach(b => {
+          const t = b.querySelector('.follow-text');
+          if (t) t.textContent = '...';
+        });
+
+        if (isFollowing) {
+          // Dejar de seguir
+          const { error } = await supabase
+            .from('seguimientos')
+            .delete()
+            .eq('usuario_id', uid)
+            .eq('instructor_nombre', instructorName);
+
+          if (!error) {
+            updateFollowUI(false);
+          } else {
+            console.error('Error al dejar de seguir:', error);
+            updateFollowUI(true); // revertir
+          }
+        } else {
+          // Seguir
+          const { error } = await supabase
+            .from('seguimientos')
+            .insert({ usuario_id: uid, instructor_nombre: instructorName });
+
+          if (!error) {
+            updateFollowUI(true);
+          } else {
+            console.error('Error al seguir:', error);
+            updateFollowUI(false); // revertir
+          }
+        }
+      });
+    });
+  }
+
+  initFollowState();
 
   // Iniciar al cargar
   initTracking();

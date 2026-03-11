@@ -9,14 +9,14 @@
     "astro": "astro"
   },
   "dependencies": {
-    "@astrojs/netlify": "^6.0.0",
+    "@astrojs/netlify": "^7.0.1",
     "@astrojs/node": "^9.5.4",
     "@mux/mux-node": "^12.8.1",
     "@mux/mux-player": "^3.11.5",
     "@mux/mux-uploader": "^1.4.1",
     "@supabase/supabase-js": "^2.98.0",
     "@tailwindcss/vite": "^4.2.1",
-    "astro": "^5.17.1",
+    "astro": "^6.0.0",
     "tailwindcss": "^4.2.1"
   }
 }

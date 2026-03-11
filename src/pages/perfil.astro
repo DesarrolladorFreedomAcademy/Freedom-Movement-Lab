@@ -47,6 +47,172 @@ const PROGRESO_HABILIDADES = [
 
 <Layout title="Mi Perfil">
   <Nav />
+
+  <!-- ===== TICKER DE NOTIFICACIONES ESTILO NOTICIERO ===== -->
+  <div class="ticker-wrapper" id="ticker-section">
+    <div class="ticker-container">
+      <!-- Badge LIVE pulsante -->
+      <div class="ticker-badge">
+        <span class="ticker-live-dot"></span>
+        <span class="ticker-live-text">EN VIVO</span>
+      </div>
+      
+      <!-- Cinta de noticias con marquesina -->
+      <div class="ticker-content" id="ticker-content">
+        <div class="ticker-track" id="ticker-track">
+          <!-- Se rellena dinámicamente con JS -->
+          <span class="ticker-item ticker-placeholder">
+            <svg class="ticker-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Cargando notificaciones...
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    /* ===== TICKER NOTICIERO ===== */
+    .ticker-wrapper {
+      position: sticky;
+      top: 56px; /* justo debajo del nav */
+      z-index: 40;
+      width: 100%;
+      background: linear-gradient(135deg, rgba(17,28,42,0.95) 0%, rgba(15,23,42,0.98) 100%);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(0,163,255,0.15);
+      box-shadow: 0 4px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(0,163,255,0.08);
+      overflow: hidden;
+    }
+    .ticker-container {
+      display: flex;
+      align-items: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 44px;
+    }
+    /* Badge EN VIVO */
+    .ticker-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 16px 0 20px;
+      flex-shrink: 0;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(0,163,255,0.12) 0%, rgba(0,229,255,0.06) 100%);
+      border-right: 1px solid rgba(0,163,255,0.2);
+    }
+    .ticker-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 8px #ef4444, 0 0 16px rgba(239,68,68,0.4);
+      animation: livePulse 1.5s ease-in-out infinite;
+    }
+    .ticker-live-text {
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #00A3FF;
+      text-shadow: 0 0 10px rgba(0,163,255,0.3);
+    }
+    /* Contenido del ticker */
+    .ticker-content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
+      -webkit-mask-image: linear-gradient(to right, transparent, black 40px, black calc(100% - 40px), transparent);
+    }
+    .ticker-track {
+      display: flex;
+      align-items: center;
+      white-space: nowrap;
+      animation: tickerScroll var(--ticker-duration, 30s) linear infinite;
+      will-change: transform;
+    }
+    .ticker-track:hover {
+      animation-play-state: paused;
+    }
+    .ticker-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 24px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #cbd5e1;
+      position: relative;
+      cursor: default;
+      transition: color 0.2s;
+    }
+    .ticker-item:hover {
+      color: #ffffff;
+    }
+    .ticker-item::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(0,163,255,0.5);
+    }
+    .ticker-item:last-child::after {
+      display: none;
+    }
+    .ticker-item-icon {
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      color: #00A3FF;
+    }
+    .ticker-item-new {
+      color: #00E5FF;
+      font-weight: 700;
+    }
+    .ticker-item-new .ticker-item-icon {
+      color: #00E5FF;
+      filter: drop-shadow(0 0 4px rgba(0,229,255,0.4));
+    }
+    .ticker-placeholder {
+      color: #475569;
+    }
+
+    /* Keyframes */
+    @keyframes tickerScroll {
+      0%   { transform: translateX(0); }
+      100% { transform: translateX(-50%); }
+    }
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%      { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .ticker-badge {
+        padding: 0 10px 0 12px;
+      }
+      .ticker-live-text {
+        font-size: 9px;
+      }
+      .ticker-item {
+        font-size: 12px;
+        padding: 0 18px;
+      }
+      .ticker-container {
+        height: 38px;
+      }
+    }
+  </style>
   
   <main class="w-full min-h-screen pb-20 mt-8">
     <div class="container mx-auto px-8 max-w-[1200px] animate-fade-in">
@@ -383,6 +549,125 @@ const PROGRESO_HABILIDADES = [
 <script>
   import { supabase } from '../lib/supabase';
 
+  // ===== TICKER DE NOTIFICACIONES =====
+  interface TickerNotification {
+    texto: string;
+    tipo: 'info' | 'logro' | 'video' | 'racha' | 'sistema';
+    nuevo: boolean;
+  }
+
+  const ICONOS_TICKER: Record<string, string> = {
+    info:    '<svg class="ticker-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>',
+    logro:   '<svg class="ticker-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M19 4H5c-1.1 0-2 .9-2 2v4c0 4.4 3.6 8 8 8s8-3.6 8-8V6c0-1.1-.9-2-2-2z"/></svg>',
+    video:   '<svg class="ticker-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>',
+    racha:   '<svg class="ticker-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>',
+    sistema: '<svg class="ticker-item-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>',
+  };
+
+  // Notificaciones fallback si el usuario no sigue a nadie o no está logueado
+  const NOTIFICACIONES_DEFAULT: TickerNotification[] = [
+    { texto: '¡Bienvenido/a a Freedom Movement Lab! Tu viaje comienza ahora.', tipo: 'sistema', nuevo: true },
+    { texto: 'Explora el catálogo y sigue a tus instructores favoritos para recibir notificaciones aquí.', tipo: 'info', nuevo: true },
+    { texto: 'Domina tus habilidades con sesiones de alta intensidad dirigidas por expertos.', tipo: 'sistema', nuevo: false },
+    { texto: '¡El movimiento es libertad! Entrena cada día para superarte.', tipo: 'racha', nuevo: false },
+  ];
+
+  function renderTicker(notificaciones: TickerNotification[]) {
+    const track = document.getElementById('ticker-track');
+    if (!track || notificaciones.length === 0) return;
+
+    // Construir ítems
+    const itemsHtml = notificaciones.map(n => {
+      const icon = ICONOS_TICKER[n.tipo] || ICONOS_TICKER.info;
+      const extraClass = n.nuevo ? ' ticker-item-new' : '';
+      return `<span class="ticker-item${extraClass}">${icon}${n.texto}</span>`;
+    }).join('');
+
+    // Duplicar para scroll infinito seamless
+    track.innerHTML = itemsHtml + itemsHtml;
+
+    // Ajustar velocidad según número de ítems
+    const segundosPorItem = 4;
+    const duracion = Math.max(notificaciones.length * segundosPorItem, 16);
+    track.style.setProperty('--ticker-duration', `${duracion}s`);
+    track.style.animationDuration = `${duracion}s`;
+  }
+
+  // Función auxiliar para calcular tiempo relativo en español
+  function tiempoRelativo(fechaStr: string): string {
+    const ahora = new Date();
+    const fecha = new Date(fechaStr);
+    const diffMs = ahora.getTime() - fecha.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHoras = Math.floor(diffMins / 60);
+    const diffDias = Math.floor(diffHoras / 24);
+
+    if (diffMins < 1) return 'Ahora mismo';
+    if (diffMins < 60) return `Hace ${diffMins} min`;
+    if (diffHoras < 24) return `Hace ${diffHoras}h`;
+    if (diffDias === 1) return 'Ayer';
+    if (diffDias < 7) return `Hace ${diffDias} días`;
+    if (diffDias < 30) return `Hace ${Math.floor(diffDias / 7)} sem.`;
+    return fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+  }
+
+  async function cargarNotificacionesTicker(userId?: string) {
+    let notificaciones: TickerNotification[] = [];
+
+    if (userId) {
+      try {
+        // 1. Obtener instructores que sigue el usuario
+        const { data: seguimientos, error: segError } = await supabase
+          .from('seguimientos')
+          .select('instructor_nombre')
+          .eq('usuario_id', userId);
+
+        if (!segError && seguimientos && seguimientos.length > 0) {
+          const nombresInstructores = seguimientos.map(s => s.instructor_nombre);
+
+          // 2. Obtener los vídeos recientes de esos instructores (últimos 30 días)
+          const hace30Dias = new Date();
+          hace30Dias.setDate(hace30Dias.getDate() - 30);
+
+          const { data: videos, error: vidError } = await supabase
+            .from('videos')
+            .select('titulo, instructor, creado_en')
+            .eq('estado', 'listo')
+            .in('instructor', nombresInstructores)
+            .gte('creado_en', hace30Dias.toISOString())
+            .order('creado_en', { ascending: false })
+            .limit(20);
+
+          if (!vidError && videos && videos.length > 0) {
+            // Convertir vídeos en notificaciones
+            notificaciones = videos.map((v: any) => ({
+              texto: `${v.instructor} ha publicado: "${v.titulo}" · ${tiempoRelativo(v.creado_en)}`,
+              tipo: 'video' as const,
+              nuevo: (new Date().getTime() - new Date(v.creado_en).getTime()) < 86400000 * 3, // <3 días = nuevo
+            }));
+          }
+
+          // 3. Si hay seguimientos pero no hay vídeos recientes
+          if (notificaciones.length === 0 && nombresInstructores.length > 0) {
+            notificaciones = [
+              { texto: `Sigues a ${nombresInstructores.length} instructor${nombresInstructores.length > 1 ? 'es' : ''}. Aquí aparecerán sus nuevos vídeos.`, tipo: 'info', nuevo: false },
+              { texto: 'Tus instructores aún no han publicado contenido reciente. ¡Estate atento!', tipo: 'sistema', nuevo: false },
+            ];
+          }
+        }
+      } catch (e) {
+        console.log('Error cargando notificaciones de seguimientos:', e);
+      }
+    }
+
+    // Fallback si no hay datos reales
+    if (notificaciones.length === 0) {
+      notificaciones = NOTIFICACIONES_DEFAULT;
+    }
+
+    renderTicker(notificaciones);
+  }
+
   // Lógica del Enfoque 1: Clásico Parkour / Traceur (Cliente)
   function obtenerTituloPorHoras(horas: number) {
     if (horas < 10) return "Aprendiz de Movimiento";
@@ -522,6 +807,9 @@ const PROGRESO_HABILIDADES = [
         joinedEl.textContent = `Miembro desde ${mes}. ${anio}`;
       }
 
+      // 2. Cargar las notificaciones del ticker
+      cargarNotificacionesTicker(session.user.id);
+
       // 1. Obtener datos extra desde Supabase -> Tabla "perfiles" (horas + rol)
       try {
         const { data: perfilData } = await supabase
@@ -549,6 +837,9 @@ const PROGRESO_HABILIDADES = [
       } catch (err) {
         console.error("No se pudo cargar perfil BD", err);
       }
+    } else {
+      // Sin sesión: mostrar ticker con datos fallback
+      cargarNotificacionesTicker();
     }
   }
 

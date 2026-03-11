@@ -27,12 +27,11 @@ const talleresDeBD = videosGuardados.map((v: any) => ({
   instructor: v.instructor || "Instructor Freedom",
   foto_ins: `https://ui-avatars.com/api/?name=${encodeURIComponent(v.instructor || 'Instructor')}&background=0F172A&color=fff`,
   dificultad: v.dificultad?.toUpperCase() || "INTERMEDIO",
-  duracion: "00:00", // En futuro se puede extraer desde Mux
+  duracion: "00:00",
   color_dif: v.dificultad === 'PRINCIPIANTE' ? 'bg-emerald-500 text-white' : (v.dificultad === 'EXPERTO' ? 'bg-rose-500 text-white' : 'bg-[#00A3FF] text-white'),
   thumb: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop"
 }));
 
-// Combinar los reales de DB (ahora sin datos falsos)
 const TALLERES = [...talleresDeBD];
 ---
 
@@ -50,9 +49,16 @@ const TALLERES = [...talleresDeBD];
           <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-3">BIBLIOTECA</h3>
           <ul class="space-y-1">
             <li>
-              <a href="#" class="flex items-center gap-3 px-4 py-2.5 bg-[#00A3FF]/10 text-[#00A3FF] rounded-xl font-medium transition-colors">
+              <a href="#" id="sidebar-todos" class="sidebar-tab-link flex items-center gap-3 px-4 py-2.5 bg-[#00A3FF]/10 text-[#00A3FF] rounded-xl font-medium transition-colors">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 Lo más reciente
+              </a>
+            </li>
+            <li>
+              <a href="#" id="sidebar-siguiendo" class="sidebar-tab-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                Siguiendo
+                <span id="following-count" class="ml-auto text-[10px] font-bold text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded-full hidden">0</span>
               </a>
             </li>
             <li>
@@ -103,12 +109,25 @@ const TALLERES = [...talleresDeBD];
       
       <!-- Top header y Título -->
       <div class="mb-8">
-        <h1 class="text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">Todos los Talleres y Tutoriales</h1>
-        <p class="text-lg text-slate-400 font-medium">Domina tus habilidades con nuestras sesiones de alta intensidad dirigidas por expertos.</p>
+        <h1 id="catalog-title" class="text-4xl md:text-5xl font-black text-white mb-3 tracking-tight">Todos los Talleres y Tutoriales</h1>
+        <p id="catalog-subtitle" class="text-lg text-slate-400 font-medium">Domina tus habilidades con nuestras sesiones de alta intensidad dirigidas por expertos.</p>
+      </div>
+
+      <!-- Tab pills -->
+      <div class="flex items-center gap-2 mb-8">
+        <button id="tab-todos" class="catalog-tab bg-[#00A3FF] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-[0_0_15px_rgba(0,163,255,0.3)]">
+          Todos
+        </button>
+        <button id="tab-siguiendo" class="catalog-tab bg-[#1E293B] hover:bg-slate-700 text-slate-300 border border-[#334155] px-5 py-2 rounded-full text-sm font-bold transition-all">
+          <span class="flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Siguiendo
+          </span>
+        </button>
       </div>
       
-      <!-- Filtros Laterales (Drop-downs) -->
-      <div class="flex flex-wrap items-center gap-4 mb-10">
+      <!-- Filtros (solo visibles en tab Todos) -->
+      <div id="filters-bar" class="flex flex-wrap items-center gap-4 mb-10">
         <button class="bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2">
            Dificultad
            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
@@ -127,54 +146,95 @@ const TALLERES = [...talleresDeBD];
         </button>
       </div>
 
-      <!-- Grid de Videos Catálogo -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
-        {TALLERES.map((taller) => (
-          <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"} class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block">
-            
-            <!-- Thumbnail y Overlays -->
-            <div class="relative w-full aspect-[16/10] overflow-hidden">
-              <img src={taller.thumb} alt={taller.titulo} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              <!-- Grado Dificultad y duración (Esquina Inferior Izquierda) -->
-              <div class="absolute bottom-3 left-3 flex items-center gap-2 z-10 w-full px-1">
-                 <span class={`text-[10px] font-bold px-2.5 py-1 ${taller.color_dif} rounded uppercase tracking-wider shadow-md`}>
-                   {taller.dificultad}
-                 </span>
-                 <span class="text-[10px] font-bold px-2 py-1 bg-black/70 backdrop-blur rounded text-white border border-white/10 shadow-md">
-                   {taller.duracion}
-                 </span>
-              </div>
-              <!-- Play overlay transparente -->
-              <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                 <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 scale-90 group-hover:scale-100 transition-transform">
-                    <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                 </div>
-              </div>
-            </div>
-
-            <!-- Información (Cuerpo de la Tarjeta) -->
-            <div class="p-5">
-              <h3 class="text-lg font-bold text-slate-100 mb-4 leading-snug group-hover:text-[#00A3FF] transition-colors line-clamp-2">
-                {taller.titulo}
-              </h3>
+      <!-- VISTA: Todos los vídeos -->
+      <div id="view-todos">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+          {TALLERES.map((taller) => (
+            <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"} class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block">
               
-              <div class="flex items-center gap-3">
-                <div class="w-7 h-7 rounded-full overflow-hidden border border-slate-700">
-                  <img src={taller.foto_ins} alt={taller.instructor} class="w-full h-full object-cover" />
+              <div class="relative w-full aspect-[16/10] overflow-hidden">
+                <img src={taller.thumb} alt={taller.titulo} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <div class="absolute bottom-3 left-3 flex items-center gap-2 z-10 w-full px-1">
+                   <span class={`text-[10px] font-bold px-2.5 py-1 ${taller.color_dif} rounded uppercase tracking-wider shadow-md`}>
+                     {taller.dificultad}
+                   </span>
+                   <span class="text-[10px] font-bold px-2 py-1 bg-black/70 backdrop-blur rounded text-white border border-white/10 shadow-md">
+                     {taller.duracion}
+                   </span>
                 </div>
-                <span class="text-sm font-medium text-slate-400">{taller.instructor}</span>
+                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                   <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 scale-90 group-hover:scale-100 transition-transform">
+                      <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                   </div>
+                </div>
               </div>
-            </div>
 
-          </a>
-        ))}
+              <div class="p-5">
+                <h3 class="text-lg font-bold text-slate-100 mb-4 leading-snug group-hover:text-[#00A3FF] transition-colors line-clamp-2">
+                  {taller.titulo}
+                </h3>
+                
+                <div class="flex items-center gap-3">
+                  <div class="w-7 h-7 rounded-full overflow-hidden border border-slate-700">
+                    <img src={taller.foto_ins} alt={taller.instructor} class="w-full h-full object-cover" />
+                  </div>
+                  <span class="text-sm font-medium text-slate-400">{taller.instructor}</span>
+                </div>
+              </div>
+
+            </a>
+          ))}
+        </div>
+
+        <div class="flex justify-center mb-20">
+          <button class="btn-primary flex items-center gap-2 text-[15px] px-8 py-3.5 shadow-[0_0_20px_rgba(0,163,255,0.3)]">
+            Cargar Más Talleres
+          </button>
+        </div>
       </div>
 
-      <!-- Cargar más botton -->
-      <div class="flex justify-center mb-20">
-        <button class="btn-primary flex items-center gap-2 text-[15px] px-8 py-3.5 shadow-[0_0_20px_rgba(0,163,255,0.3)]">
-          Cargar Más Talleres
-        </button>
+      <!-- VISTA: Siguiendo (se rellena dinámicamente con JS) -->
+      <div id="view-siguiendo" class="hidden">
+        <!-- Estado de carga -->
+        <div id="siguiendo-loading" class="flex flex-col items-center justify-center py-20">
+          <div class="w-8 h-8 border-2 border-[#00A3FF] border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p class="text-slate-400 text-sm font-medium">Cargando tus instructores...</p>
+        </div>
+
+        <!-- Contenido dinámico (inyectado por JS) -->
+        <div id="siguiendo-content" class="hidden"></div>
+
+        <!-- Estado vacío -->
+        <div id="siguiendo-empty" class="hidden flex-col items-center justify-center py-20 text-center">
+          <div class="w-20 h-20 rounded-full bg-[#111C2A] border border-white/5 flex items-center justify-center mb-6">
+            <svg class="w-10 h-10 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <line x1="19" y1="8" x2="19" y2="14"/>
+              <line x1="22" y1="11" x2="16" y2="11"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2">Aún no sigues a ningún instructor</h3>
+          <p class="text-slate-400 max-w-md mb-6">Explora los talleres del catálogo y pulsa <strong>"Seguir"</strong> en la página de un vídeo para añadir instructores aquí.</p>
+          <button id="btn-go-explore" class="btn-primary px-6 py-3 text-sm font-bold flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            Explorar Catálogo
+          </button>
+        </div>
+
+        <!-- Estado sin sesión -->
+        <div id="siguiendo-no-session" class="hidden flex-col items-center justify-center py-20 text-center">
+          <div class="w-20 h-20 rounded-full bg-[#111C2A] border border-white/5 flex items-center justify-center mb-6">
+            <svg class="w-10 h-10 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-bold text-white mb-2">Inicia sesión para ver tus seguimientos</h3>
+          <p class="text-slate-400 max-w-md mb-6">Necesitas una cuenta para seguir instructores y ver su contenido aquí.</p>
+          <a href="/login" class="btn-primary px-6 py-3 text-sm font-bold flex items-center gap-2">
+            Iniciar Sesión
+          </a>
+        </div>
       </div>
 
     </main>
@@ -186,3 +246,295 @@ const TALLERES = [...talleresDeBD];
     </div>
   </footer>
 </Layout>
+
+<script>
+  import { supabase } from '../lib/supabase';
+
+  // ==== ELEMENTOS DEL DOM ====
+  const tabTodos = document.getElementById('tab-todos');
+  const tabSiguiendo = document.getElementById('tab-siguiendo');
+  const sidebarTodos = document.getElementById('sidebar-todos');
+  const sidebarSiguiendo = document.getElementById('sidebar-siguiendo');
+  const viewTodos = document.getElementById('view-todos');
+  const viewSiguiendo = document.getElementById('view-siguiendo');
+  const filtersBar = document.getElementById('filters-bar');
+  const catalogTitle = document.getElementById('catalog-title');
+  const catalogSubtitle = document.getElementById('catalog-subtitle');
+  const followingCount = document.getElementById('following-count');
+
+  const siguiendoLoading = document.getElementById('siguiendo-loading');
+  const siguiendoContent = document.getElementById('siguiendo-content');
+  const siguiendoEmpty = document.getElementById('siguiendo-empty');
+  const siguiendoNoSession = document.getElementById('siguiendo-no-session');
+  const btnGoExplore = document.getElementById('btn-go-explore');
+
+  let siguiendoCargado = false;
+
+  // ==== LÓGICA DE TABS ====
+  function activateTab(tab: 'todos' | 'siguiendo') {
+    const isTodos = tab === 'todos';
+
+    // Tabs superiores (pill buttons)
+    if (tabTodos && tabSiguiendo) {
+      if (isTodos) {
+        tabTodos.className = 'catalog-tab bg-[#00A3FF] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-[0_0_15px_rgba(0,163,255,0.3)]';
+        tabSiguiendo.className = 'catalog-tab bg-[#1E293B] hover:bg-slate-700 text-slate-300 border border-[#334155] px-5 py-2 rounded-full text-sm font-bold transition-all';
+      } else {
+        tabSiguiendo.className = 'catalog-tab bg-[#00A3FF] text-white px-5 py-2 rounded-full text-sm font-bold transition-all shadow-[0_0_15px_rgba(0,163,255,0.3)]';
+        tabTodos.className = 'catalog-tab bg-[#1E293B] hover:bg-slate-700 text-slate-300 border border-[#334155] px-5 py-2 rounded-full text-sm font-bold transition-all';
+      }
+    }
+
+    // Sidebar links
+    if (sidebarTodos && sidebarSiguiendo) {
+      if (isTodos) {
+        sidebarTodos.className = 'sidebar-tab-link flex items-center gap-3 px-4 py-2.5 bg-[#00A3FF]/10 text-[#00A3FF] rounded-xl font-medium transition-colors';
+        sidebarSiguiendo.className = 'sidebar-tab-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors';
+      } else {
+        sidebarSiguiendo.className = 'sidebar-tab-link flex items-center gap-3 px-4 py-2.5 bg-[#00A3FF]/10 text-[#00A3FF] rounded-xl font-medium transition-colors';
+        sidebarTodos.className = 'sidebar-tab-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors';
+      }
+    }
+
+    // Mostrar/ocultar vistas
+    if (viewTodos) viewTodos.classList.toggle('hidden', !isTodos);
+    if (viewSiguiendo) viewSiguiendo.classList.toggle('hidden', isTodos);
+    if (filtersBar) filtersBar.classList.toggle('hidden', !isTodos);
+
+    // Títulos
+    if (catalogTitle) catalogTitle.textContent = isTodos ? 'Todos los Talleres y Tutoriales' : 'Instructores que Sigues';
+    if (catalogSubtitle) catalogSubtitle.textContent = isTodos
+      ? 'Domina tus habilidades con nuestras sesiones de alta intensidad dirigidas por expertos.'
+      : 'Aquí aparecen los vídeos de los instructores a los que sigues.';
+
+    // Cargar datos de siguiendo si es la primera vez
+    if (!isTodos && !siguiendoCargado) {
+      cargarSiguiendo();
+    }
+  }
+
+  // Event listeners para cambiar de tab
+  tabTodos?.addEventListener('click', () => activateTab('todos'));
+  tabSiguiendo?.addEventListener('click', () => activateTab('siguiendo'));
+  sidebarTodos?.addEventListener('click', (e) => { e.preventDefault(); activateTab('todos'); });
+  sidebarSiguiendo?.addEventListener('click', (e) => { e.preventDefault(); activateTab('siguiendo'); });
+  btnGoExplore?.addEventListener('click', () => activateTab('todos'));
+
+  // ==== CARGAR VISTA SIGUIENDO ====
+  async function cargarSiguiendo() {
+    // Mostrar loading
+    siguiendoLoading?.classList.remove('hidden');
+    siguiendoContent?.classList.add('hidden');
+    siguiendoEmpty?.classList.add('hidden');
+    siguiendoEmpty?.classList.remove('flex');
+    siguiendoNoSession?.classList.add('hidden');
+    siguiendoNoSession?.classList.remove('flex');
+
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user) {
+      siguiendoLoading?.classList.add('hidden');
+      siguiendoNoSession?.classList.remove('hidden');
+      siguiendoNoSession?.classList.add('flex');
+      return;
+    }
+
+    const userId = session.user.id;
+
+    try {
+      // 1. Obtener los instructores que sigue el usuario
+      const { data: seguimientos, error: segError } = await supabase
+        .from('seguimientos')
+        .select('instructor_nombre, creado_en')
+        .eq('usuario_id', userId)
+        .order('creado_en', { ascending: false });
+
+      if (segError) throw segError;
+
+      if (!seguimientos || seguimientos.length === 0) {
+        siguiendoLoading?.classList.add('hidden');
+        siguiendoEmpty?.classList.remove('hidden');
+        siguiendoEmpty?.classList.add('flex');
+        siguiendoCargado = true;
+        return;
+      }
+
+      // Actualizar badge del contador
+      if (followingCount) {
+        followingCount.textContent = seguimientos.length.toString();
+        followingCount.classList.remove('hidden');
+      }
+
+      // 2. Obtener vídeos de esos instructores
+      const nombresInstructores = seguimientos.map(s => s.instructor_nombre);
+
+      const { data: videos, error: vidError } = await supabase
+        .from('videos')
+        .select('id, titulo, instructor, dificultad, creado_en, mux_playback_id')
+        .eq('estado', 'listo')
+        .in('instructor', nombresInstructores)
+        .order('creado_en', { ascending: false });
+
+      if (vidError) throw vidError;
+
+      // 3. Agrupar vídeos por instructor
+      const grupos: Record<string, any[]> = {};
+      nombresInstructores.forEach(name => { grupos[name] = []; });
+
+      (videos || []).forEach((v: any) => {
+        if (grupos[v.instructor]) {
+          grupos[v.instructor].push(v);
+        }
+      });
+
+      // 4. Renderizar
+      renderSiguiendo(grupos);
+      siguiendoCargado = true;
+
+    } catch (e) {
+      console.error('Error cargando vista siguiendo:', e);
+      siguiendoLoading?.classList.add('hidden');
+      siguiendoEmpty?.classList.remove('hidden');
+      siguiendoEmpty?.classList.add('flex');
+    }
+  }
+
+  function renderSiguiendo(grupos: Record<string, any[]>) {
+    if (!siguiendoContent) return;
+
+    let html = '';
+
+    for (const [instructor, videos] of Object.entries(grupos)) {
+      const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(instructor)}&background=0F172A&color=fff`;
+      const videoCount = videos.length;
+
+      html += `
+        <div class="mb-12">
+          <!-- Cabecera del Instructor -->
+          <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-4">
+              <div class="w-12 h-12 rounded-full overflow-hidden border-2 border-[#00A3FF]/30 p-0.5 bg-[#111C2A]">
+                <img src="${avatarUrl}" alt="${instructor}" class="w-full h-full object-cover rounded-full" />
+              </div>
+              <div>
+                <h3 class="text-lg font-bold text-white">${instructor}</h3>
+                <p class="text-xs text-slate-400 font-medium">${videoCount} vídeo${videoCount !== 1 ? 's' : ''} disponible${videoCount !== 1 ? 's' : ''}</p>
+              </div>
+            </div>
+            <button class="btn-unfollow px-4 py-2 border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-bold transition-all hover:border-rose-500/50 hover:bg-rose-500/10 hover:text-rose-400" data-instructor="${instructor}">
+              ✓ Siguiendo
+            </button>
+          </div>
+
+          ${videoCount > 0 ? `
+            <!-- Grid de vídeos del instructor -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              ${videos.map(v => {
+                const thumb = v.mux_playback_id
+                  ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1`
+                  : 'https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop';
+                const dif = (v.dificultad || 'INTERMEDIO').toUpperCase();
+                const colorDif = dif === 'PRINCIPIANTE' ? 'bg-emerald-500 text-white' : (dif === 'EXPERTO' ? 'bg-rose-500 text-white' : 'bg-[#00A3FF] text-white');
+
+                return `
+                  <a href="/reproductor?id=${v.id}" class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block">
+                    <div class="relative w-full aspect-[16/10] overflow-hidden">
+                      <img src="${thumb}" alt="${v.titulo}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <div class="absolute bottom-3 left-3 flex items-center gap-2 z-10">
+                        <span class="text-[10px] font-bold px-2.5 py-1 ${colorDif} rounded uppercase tracking-wider shadow-md">${dif}</span>
+                      </div>
+                      <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                        <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 scale-90 group-hover:scale-100 transition-transform">
+                          <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="p-5">
+                      <h3 class="text-base font-bold text-slate-100 mb-2 leading-snug group-hover:text-[#00A3FF] transition-colors line-clamp-2">${v.titulo}</h3>
+                      <span class="text-xs text-slate-500">${new Date(v.creado_en).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                  </a>
+                `;
+              }).join('')}
+            </div>
+          ` : `
+            <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-8 text-center">
+              <p class="text-slate-400 text-sm">Este instructor aún no tiene vídeos publicados.</p>
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    siguiendoContent.innerHTML = html;
+    siguiendoLoading?.classList.add('hidden');
+    siguiendoContent.classList.remove('hidden');
+
+    // Añadir event listeners a los botones de dejar de seguir
+    const unfollowBtns = siguiendoContent.querySelectorAll('.btn-unfollow');
+    unfollowBtns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const instructorName = btn.getAttribute('data-instructor');
+        if (!instructorName) return;
+
+        const confirmed = confirm(`¿Dejar de seguir a ${instructorName}?`);
+        if (!confirmed) return;
+
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session?.user) return;
+
+        const { error } = await supabase
+          .from('seguimientos')
+          .delete()
+          .eq('usuario_id', session.user.id)
+          .eq('instructor_nombre', instructorName);
+
+        if (!error) {
+          // Recargar la vista
+          siguiendoCargado = false;
+          cargarSiguiendo();
+        } else {
+          console.error('Error al dejar de seguir:', error);
+        }
+      });
+
+      // Efecto hover: cambiar texto
+      btn.addEventListener('mouseenter', () => {
+        btn.textContent = '✕ Dejar de seguir';
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.textContent = '✓ Siguiendo';
+      });
+    });
+  }
+
+  // Comprobar si hay un hash #siguiendo en la URL al cargar
+  if (window.location.hash === '#siguiendo') {
+    activateTab('siguiendo');
+  }
+
+  // Actualizar el badge del contador al cargar
+  async function updateFollowingBadge() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('seguimientos')
+        .select('id')
+        .eq('usuario_id', session.user.id);
+
+      if (!error && followingCount && data) {
+        const count = data.length;
+        if (count > 0) {
+          followingCount.textContent = count.toString();
+          followingCount.classList.remove('hidden');
+        }
+      }
+    } catch(e) {
+      // Tabla no existe todavía, ignorar
+    }
+  }
+
+  updateFollowingBadge();
+</script>

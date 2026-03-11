@@ -34,3 +34,6 @@ supabase/.temp/
 
 # mockups e imágenes de diseño (no son código)
 mockups/
+
+# Local Netlify folder
+.netlify
