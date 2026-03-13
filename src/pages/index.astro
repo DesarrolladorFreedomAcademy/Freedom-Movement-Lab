@@ -5,18 +5,19 @@ import Nav from '../components/Nav.astro';
 // Dark blue/grey urban jumping 
 
 import { supabase } from '../lib/supabase';
+import { getAndSyncMuxDuration } from '../lib/muxApi';
 
 let ultimosVideos = [];
 try {
   const { data, error } = await supabase
     .from('videos')
-    .select('id, titulo, descripcion, dificultad, creado_en, mux_playback_id')
+    .select('id, titulo, descripcion, dificultad, creado_en, mux_playback_id, mux_asset_id, duracion')
     .eq('estado', 'listo')
     .order('creado_en', { ascending: false })
     .limit(2);
     
   if (error) throw error;
-  ultimosVideos = data || [];
+  ultimosVideos = await getAndSyncMuxDuration(data || []);
 } catch (e) {
   console.error('Error al obtener lo nuevo de BD:', e);
 }
@@ -25,7 +26,7 @@ const NUEVOS_DE_BD = ultimosVideos.map((v: any) => ({
   id: v.id,
   title: v.titulo,
   tag: v.dificultad?.toUpperCase() || "INTERMEDIO",
-  time: "00:00",
+  time: v.duracion ? `${Math.floor(v.duracion / 60).toString().padStart(2, '0')}:${(v.duracion % 60).toString().padStart(2, '0')}` : "00:00",
   rating: "5.0",
   img: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1` : "https://images.unsplash.com/photo-1549476464-37392f717541?q=80&w=1000&auto=format&fit=crop"
 }));

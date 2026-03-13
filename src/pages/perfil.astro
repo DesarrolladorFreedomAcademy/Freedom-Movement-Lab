@@ -70,7 +70,7 @@ const PROGRESO_HABILIDADES = [
     </div>
   </div>
 
-  <style>
+  <style is:global>
     /* ===== TICKER NOTICIERO ===== */
     .ticker-wrapper {
       position: sticky;
@@ -246,10 +246,14 @@ const PROGRESO_HABILIDADES = [
           </div>
         </div>
         
-        <div class="mt-6 md:mt-0">
+        <div class="mt-6 md:mt-0 flex items-center gap-3">
           <button id="btn-edit-profile" class="btn-primary flex items-center gap-2">
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
             Editar Perfil
+          </button>
+          <button id="btn-logout" class="bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-white/10 hover:border-rose-500/30 transition-colors px-4 py-3 rounded-full font-bold text-sm h-12 flex items-center justify-center gap-2 whitespace-nowrap min-w-fit shadow-[0_0_15px_rgba(0,0,0,0.5)] active:scale-95">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span class="hidden md:inline">Cerrar Sesión</span>
           </button>
         </div>
       </section>
@@ -583,14 +587,21 @@ const PROGRESO_HABILIDADES = [
       return `<span class="ticker-item${extraClass}">${icon}${n.texto}</span>`;
     }).join('');
 
-    // Duplicar para scroll infinito seamless
-    track.innerHTML = itemsHtml + itemsHtml;
+    // Duplicamos suficientes veces para asegurarnos de que el texto sobrepase pantallas muy anchas.
+    // Usamos 20 repeticiones. Como la animación en CSS mueve el -50% (translateX), estará desplazando exactamente 10 bloques.
+    const repeticiones = 20;
+    track.innerHTML = itemsHtml.repeat(repeticiones);
 
-    // Ajustar velocidad según número de ítems
-    const segundosPorItem = 4;
-    const duracion = Math.max(notificaciones.length * segundosPorItem, 16);
-    track.style.setProperty('--ticker-duration', `${duracion}s`);
-    track.style.animationDuration = `${duracion}s`;
+    // Ajustar velocidad según número de ítems para que sea fluida
+    let segundosPorBloque = notificaciones.length * 5; 
+    // Mínimo de tiempo por bloque si hay muy pocos items para que no parezca que van volando
+    if (segundosPorBloque < 20) segundosPorBloque = 20; 
+    
+    // Al trasladar -50%, movemos la mitad de los bloques (10 bloques en este caso)
+    const duracionTotal = segundosPorBloque * (repeticiones / 2);
+    
+    track.style.setProperty('--ticker-duration', `${duracionTotal}s`);
+    track.style.animationDuration = `${duracionTotal}s`;
   }
 
   // Función auxiliar para calcular tiempo relativo en español
@@ -631,7 +642,7 @@ const PROGRESO_HABILIDADES = [
 
           const { data: videos, error: vidError } = await supabase
             .from('videos')
-            .select('titulo, instructor, creado_en')
+            .select('id, titulo, instructor, creado_en')
             .eq('estado', 'listo')
             .in('instructor', nombresInstructores)
             .gte('creado_en', hace30Dias.toISOString())
@@ -639,15 +650,32 @@ const PROGRESO_HABILIDADES = [
             .limit(20);
 
           if (!vidError && videos && videos.length > 0) {
+            // 3. Obtener cuáles ya fueron marcados como vistos
+            let idsVistos: Set<string> = new Set();
+            try {
+              const videoIds = videos.map((v: any) => v.id);
+              const { data: vistos } = await supabase
+                .from('notificaciones_vistas')
+                .select('video_id')
+                .eq('usuario_id', userId)
+                .in('video_id', videoIds);
+
+              if (vistos) {
+                vistos.forEach((v: any) => idsVistos.add(v.video_id));
+              }
+            } catch (e) {
+              // Tabla no existe aún, tratar todo como no visto
+            }
+
             // Convertir vídeos en notificaciones
             notificaciones = videos.map((v: any) => ({
               texto: `${v.instructor} ha publicado: "${v.titulo}" · ${tiempoRelativo(v.creado_en)}`,
               tipo: 'video' as const,
-              nuevo: (new Date().getTime() - new Date(v.creado_en).getTime()) < 86400000 * 3, // <3 días = nuevo
+              nuevo: !idsVistos.has(v.id), // Nuevo = no marcado como visto
             }));
           }
 
-          // 3. Si hay seguimientos pero no hay vídeos recientes
+          // 4. Si hay seguimientos pero no hay vídeos recientes
           if (notificaciones.length === 0 && nombresInstructores.length > 0) {
             notificaciones = [
               { texto: `Sigues a ${nombresInstructores.length} instructor${nombresInstructores.length > 1 ? 'es' : ''}. Aquí aparecerán sus nuevos vídeos.`, tipo: 'info', nuevo: false },
@@ -962,6 +990,29 @@ const PROGRESO_HABILIDADES = [
         setStatus('error', `Error: ${err.message}`);
       } finally {
         uploadBtn.disabled = false;
+      }
+    });
+  }
+
+  // --- Lógica de Cerrar Sesión ---
+  const btnLogout = document.getElementById('btn-logout');
+  if (btnLogout) {
+    btnLogout.addEventListener('click', async () => {
+      // Opcional: poner estado de carga visual en el botón
+      const btnSpan = btnLogout.querySelector('span');
+      if (btnSpan) btnSpan.textContent = 'Cerrando...';
+      
+      try {
+        await supabase.auth.signOut();
+        // Limpiamos caché local de notificaciones solo por si acaso
+        localStorage.removeItem('fml_unread_notis');
+        localStorage.removeItem('fml_noti_last_check');
+        
+        // Redirigir siempre a inicio al cerrar sesión con un hard reload
+        window.location.href = '/';
+      } catch (error) {
+        console.error('Error cerrando sesión:', error);
+        if (btnSpan) btnSpan.textContent = 'Cerrar Sesión';
       }
     });
   }

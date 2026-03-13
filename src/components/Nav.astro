@@ -1,5 +1,10 @@
 ---
 // src/components/Nav.astro
+
+// Obtenemos la ruta actual para iluminar el link activo
+const pathname = Astro.url.pathname;
+// Normalizamos para quitar barra final si hay (excepto en inicio "/")
+const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.slice(0, -1) : pathname;
 ---
 
 <nav class="sticky top-0 z-50 w-full bg-[#0F172A]/90 backdrop-blur-md border-b border-white/5 py-3 md:py-4 px-4 md:px-8 flex items-center justify-between">
@@ -33,10 +38,10 @@
     </a>
 
     <!-- Links -->
-    <div class="flex items-center gap-6 text-sm font-medium text-slate-300">
-      <a href="/" class="text-white hover:text-[#00A3FF] transition-colors">Inicio</a>
-      <a href="/catalogo" class="hover:text-[#00A3FF] transition-colors">Catálogo</a>
-      <a href="/entrenamiento" class="hover:text-[#00A3FF] transition-colors">Mi entrenamiento</a>
+    <div class="flex items-center gap-6 text-sm font-medium">
+      <a href="/" class={`transition-colors ${currentPath === '/' ? 'text-white' : 'text-slate-300 hover:text-[#00A3FF]'}`}>Inicio</a>
+      <a href="/catalogo" class={`transition-colors ${currentPath.startsWith('/catalogo') ? 'text-white' : 'text-slate-300 hover:text-[#00A3FF]'}`}>Catálogo</a>
+      <a href="/entrenamiento" class={`transition-colors ${currentPath.startsWith('/entrenamiento') ? 'text-white' : 'text-slate-300 hover:text-[#00A3FF]'}`}>Mi entrenamiento</a>
     </div>
   </div>
 
@@ -69,8 +74,8 @@
           <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
           <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
         </svg>
-        <span class="absolute top-[2px] right-[2px] md:top-0 md:right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse blur-[1px]"></span>
-        <span class="absolute top-[2px] right-[2px] md:top-0 md:right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+        <span id="noti-dot-pulse" class="absolute top-[2px] right-[2px] md:top-0 md:right-0 w-2 h-2 bg-red-500 rounded-full animate-pulse blur-[1px] hidden"></span>
+        <span id="noti-dot-solid" class="absolute top-[2px] right-[2px] md:top-0 md:right-0 w-2 h-2 bg-red-500 rounded-full hidden"></span>
       </button>
 
       <!-- Popup Dropdown -->
@@ -78,7 +83,10 @@
         <!-- Header -->
         <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between">
           <h3 class="font-bold text-white text-sm">Notificaciones</h3>
-          <span id="noti-badge-count" class="text-[10px] font-bold text-[#00A3FF] hidden">0 nuevas</span>
+          <div class="flex items-center gap-3">
+            <span id="noti-badge-count" class="text-[10px] font-bold text-[#00A3FF] hidden">0 nuevas</span>
+            <button id="btn-marcar-vistas" class="text-[10px] text-slate-400 hover:text-[#00A3FF] font-semibold transition-colors hidden">Marcar como vistas</button>
+          </div>
         </div>
         
         <!-- List (contenido dinámico) -->
@@ -139,6 +147,75 @@
 
   // --- Lógica de Autenticación y Estado ---
 
+  const dotPulse = document.getElementById('noti-dot-pulse');
+  const dotSolid = document.getElementById('noti-dot-solid');
+
+  function showRedDots() {
+    if(dotPulse) dotPulse.classList.remove('hidden');
+    if(dotSolid) dotSolid.classList.remove('hidden');
+    localStorage.setItem('fml_unread_notis', 'true');
+  }
+
+  function hideRedDots() {
+    if(dotPulse) dotPulse.classList.add('hidden');
+    if(dotSolid) dotSolid.classList.add('hidden');
+    localStorage.setItem('fml_unread_notis', 'false');
+  }
+
+  // Comprobar caché local inmediatamente para que no haya salto visual
+  if (localStorage.getItem('fml_unread_notis') === 'true') {
+    showRedDots();
+  }
+
+  async function checkNewNotificationsSilent(userId: string) {
+    // Solo comprueba una vez cada 5 minutos
+    const lastCheck = localStorage.getItem('fml_noti_last_check');
+    const now = new Date().getTime();
+    if (lastCheck && now - parseInt(lastCheck) < 5 * 60 * 1000) {
+      return;
+    }
+    localStorage.setItem('fml_noti_last_check', now.toString());
+
+    try {
+      const { data: seguimientos } = await supabase.from('seguimientos').select('instructor_nombre').eq('usuario_id', userId);
+      if (!seguimientos || seguimientos.length === 0) {
+        hideRedDots();
+        return;
+      }
+
+      const nombresInstructores = seguimientos.map(s => s.instructor_nombre);
+      const hace3Dias = new Date(now - 86400000 * 3).toISOString();
+
+      const { data: videos } = await supabase.from('videos')
+        .select('id')
+        .eq('estado', 'listo')
+        .in('instructor', nombresInstructores)
+        .gte('creado_en', hace3Dias);
+
+      if (!videos || videos.length === 0) {
+        hideRedDots();
+        return;
+      }
+
+      const videoIds = videos.map(v => v.id);
+      const { data: vistos } = await supabase.from('notificaciones_vistas')
+        .select('video_id')
+        .eq('usuario_id', userId)
+        .in('video_id', videoIds);
+
+      const idsVistos = new Set(vistos?.map(v => v.video_id) || []);
+      const hayNuevos = videos.some(v => !idsVistos.has(v.id));
+
+      if (hayNuevos) {
+        showRedDots();
+      } else {
+        hideRedDots();
+      }
+    } catch (e) {
+      // Ignorar errores en background silencioso
+    }
+  }
+
   async function checkUser() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -175,12 +252,16 @@
         if (notiWrapper) { 
           notiWrapper.classList.remove('hidden'); 
           notiWrapper.classList.add('flex'); 
+          checkNewNotificationsSilent(session.user.id);
         }
         
       } else {
         // Visitante
         if(mobileLoginBtn) mobileLoginBtn.classList.remove('hidden');
-        if(desktopLoginBtn) { desktopLoginBtn.classList.remove('hidden'); desktopLoginBtn.classList.add('md:flex'); }
+        if(desktopLoginBtn) { 
+          // Mantenerlo oculto en móvil, pero mostrarlo como flex en desktop
+          desktopLoginBtn.classList.add('hidden', 'md:flex'); 
+        }
       }
     } catch(e) {
       console.error('Error on auth load:', e);
@@ -245,11 +326,14 @@
     return fecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
   }
 
+  // Variables para el sistema de "marcar como vistas"
+  let videosNoVistos: string[] = []; 
+  let currentUserId: string | null = null;
+
   async function cargarNotificacionesDropdown() {
     const notiList = document.getElementById('noti-list');
-    const notiLoading = document.getElementById('noti-loading');
     const notiBadge = document.getElementById('noti-badge-count');
-    const redDots = btn?.querySelectorAll('span.bg-red-500');
+    const btnMarcarVistas = document.getElementById('btn-marcar-vistas');
 
     if (!notiList) return;
 
@@ -263,11 +347,13 @@
         return;
       }
 
+      currentUserId = session.user.id;
+
       // 1. Obtener instructores seguidos
       const { data: seguimientos, error: segError } = await supabase
         .from('seguimientos')
         .select('instructor_nombre')
-        .eq('usuario_id', session.user.id);
+        .eq('usuario_id', currentUserId);
 
       if (segError || !seguimientos || seguimientos.length === 0) {
         notiList.innerHTML = `
@@ -279,8 +365,7 @@
             <p class="text-sm text-slate-400 mb-1">Sin notificaciones</p>
             <p class="text-xs text-slate-500">Sigue instructores en el catálogo para recibir alertas de nuevos vídeos.</p>
           </div>`;
-        // Ocultar punto rojo
-        redDots?.forEach(d => (d as HTMLElement).style.display = 'none');
+        hideRedDots();
         return;
       }
 
@@ -301,28 +386,55 @@
             <p class="text-sm text-slate-400 mb-1">Todo al día</p>
             <p class="text-xs text-slate-500">Tus instructores seguidos no han publicado vídeos recientes.</p>
           </div>`;
-        redDots?.forEach(d => (d as HTMLElement).style.display = 'none');
+        hideRedDots();
         return;
       }
 
-      // 3. Contar nuevos (<3 días)
-      const tresDiasMs = 86400000 * 3;
-      const ahora = new Date().getTime();
-      const nuevos = videos.filter((v: any) => (ahora - new Date(v.creado_en).getTime()) < tresDiasMs).length;
+      // 3. Obtener vídeos ya marcados como vistos por este usuario
+      let idsVistos: Set<string> = new Set();
+      try {
+        const videoIds = videos.map((v: any) => v.id);
+        const { data: vistos } = await supabase
+          .from('notificaciones_vistas')
+          .select('video_id')
+          .eq('usuario_id', currentUserId)
+          .in('video_id', videoIds);
+
+        if (vistos) {
+          vistos.forEach((v: any) => idsVistos.add(v.video_id));
+        }
+      } catch (e) {
+        // En caso de error (o si la tabla no existe), tratar todo como no visto
+      }
+
+      // 4. Determinar cuáles son nuevos (no vistos)
+      videosNoVistos = videos
+        .filter((v: any) => !idsVistos.has(v.id))
+        .map((v: any) => v.id);
+
+      const nuevos = videosNoVistos.length;
 
       if (notiBadge && nuevos > 0) {
         notiBadge.textContent = `${nuevos} nueva${nuevos > 1 ? 's' : ''}`;
         notiBadge.classList.remove('hidden');
+      } else if (notiBadge) {
+        notiBadge.classList.add('hidden');
       }
 
-      if (nuevos === 0) {
-        redDots?.forEach(d => (d as HTMLElement).style.display = 'none');
+      if (btnMarcarVistas && nuevos > 0) {
+        btnMarcarVistas.classList.remove('hidden');
       }
 
-      // 4. Renderizar lista
+      if (nuevos > 0) {
+        showRedDots();
+      } else {
+        hideRedDots();
+      }
+
+      // 5. Renderizar lista
       let html = '';
       videos.forEach((v: any, i: number) => {
-        const esNuevo = (ahora - new Date(v.creado_en).getTime()) < tresDiasMs;
+        const esNuevo = !idsVistos.has(v.id);
         const thumb = v.mux_playback_id 
           ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1&width=80&height=45` 
           : '';
@@ -330,20 +442,20 @@
         const bgClass = esNuevo ? 'bg-white/5 hover:bg-white/10' : 'hover:bg-white/5';
 
         html += `
-          <a href="/reproductor?id=${v.id}" class="block p-3 ${bordeBottom} ${bgClass} transition-colors">
+          <a href="/reproductor?id=${v.id}" class="noti-item block p-3 ${bordeBottom} ${bgClass} transition-colors" data-video-id="${v.id}">
             <div class="flex gap-3">
               ${thumb ? `
                 <div class="w-16 h-10 rounded-lg overflow-hidden flex-shrink-0 border border-white/5">
                   <img src="${thumb}" alt="" class="w-full h-full object-cover" />
                 </div>
               ` : `
-                <div class="w-2 h-2 mt-1.5 rounded-full ${esNuevo ? 'bg-[#00A3FF]' : 'bg-transparent'} flex-shrink-0"></div>
+                <div class="noti-dot w-2 h-2 mt-1.5 rounded-full ${esNuevo ? 'bg-[#00A3FF]' : 'bg-transparent'} flex-shrink-0"></div>
               `}
               <div class="min-w-0">
                 <p class="text-sm ${esNuevo ? 'text-slate-200' : 'text-slate-300'} leading-snug">
                   <span class="font-bold ${esNuevo ? 'text-white' : 'text-slate-200'}">${v.instructor}</span> ha publicado
                 </p>
-                <p class="text-xs ${esNuevo ? 'text-[#00A3FF]' : 'text-slate-400'} font-medium truncate mt-0.5">${v.titulo}</p>
+                <p class="noti-titulo text-xs ${esNuevo ? 'text-[#00A3FF]' : 'text-slate-400'} font-medium truncate mt-0.5">${v.titulo}</p>
                 <p class="text-[10px] text-slate-500 mt-1">${tiempoRelativoNav(v.creado_en)}</p>
               </div>
             </div>
@@ -361,5 +473,76 @@
         </div>`;
     }
   }
+
+  // --- Marcar todas las notificaciones como vistas ---
+  async function marcarComoVistas() {
+    if (!currentUserId || videosNoVistos.length === 0) return;
+
+    const btnMarcarVistas = document.getElementById('btn-marcar-vistas');
+    const notiBadge = document.getElementById('noti-badge-count');
+
+    if (btnMarcarVistas) btnMarcarVistas.textContent = 'Guardando...';
+
+    try {
+      const registros = videosNoVistos.map(videoId => ({
+        usuario_id: currentUserId,
+        video_id: videoId,
+      }));
+
+      const { error } = await supabase
+        .from('notificaciones_vistas')
+        .upsert(registros, { onConflict: 'usuario_id, video_id' });
+
+      if (error) throw error;
+
+      // Actualización optimista de UI
+      const notiItems = document.querySelectorAll('.noti-item');
+      notiItems.forEach(item => {
+        item.classList.remove('bg-white/5');
+        item.classList.add('hover:bg-white/5');
+        
+        const titulo = item.querySelector('.noti-titulo');
+        if (titulo) {
+          titulo.classList.remove('text-[#00A3FF]');
+          titulo.classList.add('text-slate-400');
+        }
+        const dot = item.querySelector('.noti-dot');
+        if (dot) {
+          dot.classList.remove('bg-[#00A3FF]');
+          dot.classList.add('bg-transparent');
+        }
+        const bold = item.querySelector('.font-bold');
+        if (bold) {
+          bold.classList.remove('text-white');
+          bold.classList.add('text-slate-200');
+        }
+        const pTexto = item.querySelector('p.text-sm');
+        if (pTexto) {
+          pTexto.classList.remove('text-slate-200');
+          pTexto.classList.add('text-slate-300');
+        }
+      });
+
+      if (notiBadge) notiBadge.classList.add('hidden');
+      hideRedDots();
+
+      if (btnMarcarVistas) {
+        btnMarcarVistas.textContent = '✓ Listo';
+        btnMarcarVistas.classList.add('text-emerald-400');
+        btnMarcarVistas.classList.remove('text-slate-400');
+        setTimeout(() => {
+          btnMarcarVistas.classList.add('hidden');
+        }, 2000);
+      }
+
+      videosNoVistos = [];
+
+    } catch (e) {
+      console.error('Error marcando como vistas:', e);
+      if (btnMarcarVistas) btnMarcarVistas.textContent = 'Error, reintentar';
+    }
+  }
+
+  document.getElementById('btn-marcar-vistas')?.addEventListener('click', marcarComoVistas);
 
 </script>

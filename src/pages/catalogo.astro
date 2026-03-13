@@ -4,18 +4,19 @@ import Nav from '../components/Nav.astro';
 
 
 import { supabase } from '../lib/supabase';
+import { getAndSyncMuxDuration } from '../lib/muxApi';
 
 // Consultar los videos reales desde Supabase
 let videosGuardados = [];
 try {
   const { data, error } = await supabase
     .from('videos')
-    .select('id, titulo, instructor, dificultad, creado_en, mux_playback_id')
+    .select('id, titulo, instructor, dificultad, creado_en, mux_playback_id, mux_asset_id, duracion')
     .eq('estado', 'listo')
     .order('creado_en', { ascending: false });
     
   if (error) throw error;
-  videosGuardados = data || [];
+  videosGuardados = await getAndSyncMuxDuration(data || []);
 } catch (e) {
   console.error('Error al obtener catalogo de BD:', e);
 }
@@ -27,7 +28,7 @@ const talleresDeBD = videosGuardados.map((v: any) => ({
   instructor: v.instructor || "Instructor Freedom",
   foto_ins: `https://ui-avatars.com/api/?name=${encodeURIComponent(v.instructor || 'Instructor')}&background=0F172A&color=fff`,
   dificultad: v.dificultad?.toUpperCase() || "INTERMEDIO",
-  duracion: "00:00",
+  duracion: v.duracion ? `${Math.floor(v.duracion / 60).toString().padStart(2, '0')}:${(v.duracion % 60).toString().padStart(2, '0')}` : "00:00",
   color_dif: v.dificultad === 'PRINCIPIANTE' ? 'bg-emerald-500 text-white' : (v.dificultad === 'EXPERTO' ? 'bg-rose-500 text-white' : 'bg-[#00A3FF] text-white'),
   thumb: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop"
 }));
