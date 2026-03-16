@@ -30,7 +30,7 @@ const talleresDeBD = videosGuardados.map((v: any) => ({
   dificultad: v.dificultad?.toUpperCase() || "INTERMEDIO",
   duracion: v.duracion ? `${Math.floor(v.duracion / 60).toString().padStart(2, '0')}:${(v.duracion % 60).toString().padStart(2, '0')}` : "00:00",
   color_dif: v.dificultad === 'PRINCIPIANTE' ? 'bg-emerald-500 text-white' : (v.dificultad === 'EXPERTO' ? 'bg-rose-500 text-white' : 'bg-[#00A3FF] text-white'),
-  thumb: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop"
+  thumb: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1&width=600` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop"
 }));
 
 const TALLERES = [...talleresDeBD];
@@ -154,8 +154,9 @@ const TALLERES = [...talleresDeBD];
             <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"} class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block">
               
               <div class="relative w-full aspect-[16/10] overflow-hidden">
-                <img src={taller.thumb} alt={taller.titulo} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                <div class="absolute bottom-3 left-3 flex items-center gap-2 z-10 w-full px-1">
+                <img src={taller.thumb} alt={taller.titulo} loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                <div class="absolute bottom-3 left-3 flex items-center gap-2 z-20 w-full px-1">
                    <span class={`text-[10px] font-bold px-2.5 py-1 ${taller.color_dif} rounded uppercase tracking-wider shadow-md`}>
                      {taller.dificultad}
                    </span>
@@ -163,7 +164,7 @@ const TALLERES = [...talleresDeBD];
                      {taller.duracion}
                    </span>
                 </div>
-                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20 pointer-events-none">
                    <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 scale-90 group-hover:scale-100 transition-transform">
                       <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                    </div>
@@ -432,7 +433,7 @@ const TALLERES = [...talleresDeBD];
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               ${videos.map(v => {
                 const thumb = v.mux_playback_id
-                  ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1`
+                  ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1&width=600`
                   : 'https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop';
                 const dif = (v.dificultad || 'INTERMEDIO').toUpperCase();
                 const colorDif = dif === 'PRINCIPIANTE' ? 'bg-emerald-500 text-white' : (dif === 'EXPERTO' ? 'bg-rose-500 text-white' : 'bg-[#00A3FF] text-white');
@@ -440,11 +441,12 @@ const TALLERES = [...talleresDeBD];
                 return `
                   <a href="/reproductor?id=${v.id}" class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block">
                     <div class="relative w-full aspect-[16/10] overflow-hidden">
-                      <img src="${thumb}" alt="${v.titulo}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                      <div class="absolute bottom-3 left-3 flex items-center gap-2 z-10">
+                      <img src="${thumb}" alt="${v.titulo}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                      <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none opacity-80 group-hover:opacity-90 transition-opacity"></div>
+                      <div class="absolute bottom-3 left-3 flex items-center gap-2 z-20">
                         <span class="text-[10px] font-bold px-2.5 py-1 ${colorDif} rounded uppercase tracking-wider shadow-md">${dif}</span>
                       </div>
-                      <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                      <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none z-20">
                         <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 scale-90 group-hover:scale-100 transition-transform">
                           <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                         </div>

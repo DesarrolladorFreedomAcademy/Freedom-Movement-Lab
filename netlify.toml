@@ -1,3 +1,9 @@
 [build]
   command = "npm run build"
   publish = "dist"
+
+[dev]
+  command = "npm run dev"
+  targetPort = 4321
+  frameworkPortRenderTimeout = 60000 
+  publish = "dist"

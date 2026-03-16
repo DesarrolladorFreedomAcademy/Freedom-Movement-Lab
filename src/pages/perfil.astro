@@ -32,11 +32,7 @@ const LOGROS = [
   { id: 3, title: "Jefe del Kong Vault", date: "BLOQUEADO", unlocked: false, icon: "kong" }
 ];
 
-const HISTORIAL = [
-  { id: 1, title: "Técnica Avanzada de Salto de Gato", type: "Lección VOD", duration: "24 mins", date: "HOY", status: "Completado", icon: "play" },
-  { id: 2, title: "Simulacro de Pliometría Explosiva", type: "Sesión de práctica", duration: "45 mins", date: "AYER", status: "Nivel 4", icon: "practice" },
-  { id: 3, title: "Fundamentos de Seguridad en el Aterrizaje", type: "Lección VOD", duration: "12 mins", date: "3 OCT", status: "Repaso", icon: "play" }
-];
+const HISTORIAL = []; // Ahora se carga de forma dinámica
 
 const PROGRESO_HABILIDADES = [
   { name: "SALTOS DE OBSTÁCULOS (VAULTING)", percentage: 90 },
@@ -218,20 +214,18 @@ const PROGRESO_HABILIDADES = [
     <div class="container mx-auto px-8 max-w-[1200px] animate-fade-in">
       
       <!-- User Info Header Card -->
-      <section class="bg-[#111C2A] border border-white/5 rounded-3xl p-8 mb-8 flex flex-col md:flex-row items-center justify-between shadow-xl shadow-black/20">
+      <section id="profile-header-card" class="bg-[#111C2A] border border-white/5 rounded-3xl p-8 mb-8 flex flex-col md:flex-row items-center justify-between shadow-xl shadow-black/20 transition-all duration-500">
         <div class="flex items-center gap-6">
           <div class="relative">
             <!-- Avatar Ring -->
-            <div class="w-28 h-28 rounded-full bg-gradient-to-tr from-[#00A3FF] to-[#00E5FF] p-1 shadow-[0_0_20px_rgba(0,163,255,0.4)]">
+            <div id="profile-avatar-ring" class="w-28 h-28 rounded-full bg-gradient-to-tr from-[#00A3FF] to-[#00E5FF] p-1 shadow-[0_0_20px_rgba(0,163,255,0.4)] transition-all duration-500">
               <div class="w-full h-full bg-[#0F172A] rounded-full overflow-hidden border-4 border-[#0F172A]">
                 <img id="profile-avatar" src={user.avatar} alt={user.name} class="w-full h-full object-cover" />
               </div>
             </div>
-            {user.isPro && (
-              <div class="absolute -bottom-2 right-2 bg-[#00A3FF] text-white text-xs font-black uppercase px-2 py-0.5 rounded shadow-lg border-2 border-[#111C2A]">
-                PRO
-              </div>
-            )}
+            <div id="profile-coach-badge" class="hidden absolute -bottom-2 right-1 bg-gradient-to-r from-[#EAB308] to-[#FDE047] text-black text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-[0_0_15px_rgba(234,179,8,0.5)] border border-[#FEF08A]">
+              COACH
+            </div>
           </div>
           
           <div>
@@ -267,7 +261,7 @@ const PROGRESO_HABILIDADES = [
           <h3 class="text-xs font-bold text-slate-400 tracking-wider mb-2 relative z-10">HORAS DE ENTRENAMIENTO</h3>
           <div id="profile-hours" class="text-5xl font-black text-white mb-2 relative z-10">{user.hours.total}</div>
           <div class="flex items-end justify-between relative z-10">
-            <span class="text-sm font-semibold text-emerald-400 flex items-center gap-1">
+            <span id="profile-weekly-inc" class="text-sm font-semibold text-emerald-400 flex items-center gap-1">
                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>
               +{user.hours.weeklyIncrease}h esta semana
             </span>
@@ -311,8 +305,8 @@ const PROGRESO_HABILIDADES = [
 
           <h3 class="text-xs font-bold text-slate-400 tracking-wider mb-2 relative z-10">RACHA SEMANAL</h3>
           <div class="flex items-baseline gap-2 relative z-10 mb-2">
-             <span class="text-5xl font-black text-white">{user.streak.current}</span>
-             <span class="text-lg font-bold text-slate-500">Days</span>
+             <span id="profile-streak" class="text-5xl font-black text-white">{user.streak.current}</span>
+             <span class="text-lg font-bold text-slate-500">Días</span>
           </div>
           
           <div class="flex items-center justify-between mt-4 relative z-10">
@@ -371,32 +365,17 @@ const PROGRESO_HABILIDADES = [
             <a href="#" class="text-sm font-semibold text-[#00A3FF] hover:text-[#00E5FF] transition-colors text-right">Registros<br/>completos</a>
           </div>
 
-          <div class="space-y-3">
-            {HISTORIAL.map((item) => (
-              <div class="flex items-center gap-4 bg-[#111C2A] border border-white/5 p-4 rounded-2xl hover:bg-slate-800 transition-colors cursor-pointer group">
-                <div class={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${item.icon === 'play' ? 'bg-[#00A3FF]/10 text-[#00A3FF]' : 'bg-[#00E5FF]/10 text-[#00E5FF]'}`}>
-                   {item.icon === 'play' ? 
-                     <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> :
-                     <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10 6 4 4-4 4"/><path d="M21 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                   }
-                </div>
-                
-                <div class="flex-grow min-w-0">
-                  <h4 class="font-bold text-sm text-slate-100 truncate group-hover:text-[#00A3FF] transition-colors">{item.title}</h4>
-                  <div class="text-xs text-slate-400 mt-1 flex gap-2 items-center">
-                    <span>{item.type}</span>
-                    <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
-                    <span>{item.duration}</span>
-                    <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
-                    <span class="text-slate-300">{item.status}</span>
-                  </div>
-                </div>
-                
-                <div class="text-xs font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">
-                  {item.date}
+          <div class="space-y-3" id="profile-historial-list">
+            <div class="animate-pulse flex space-x-4 bg-[#111C2A] p-4 rounded-2xl border border-white/5">
+              <div class="rounded-full bg-slate-700 h-10 w-10"></div>
+              <div class="flex-1 space-y-2 py-1">
+                <div class="h-3 bg-slate-700 rounded w-3/4"></div>
+                <div class="space-y-2">
+                  <div class="h-2 bg-slate-700 rounded w-1/2"></div>
                 </div>
               </div>
-            ))}
+            </div>
+            <!-- El contenido real será inyectado por JS -->
           </div>
         </div>
       </div>
@@ -427,16 +406,18 @@ const PROGRESO_HABILIDADES = [
 
       <!-- ===== PANEL INSTRUCTOR / ADMIN: Subida de Vídeos ===== -->
       <!-- Oculto por defecto, sólo visible si rol = instructor | admin -->
-      <section id="upload-panel" class="hidden mt-12 mb-6">
-        <div class="flex items-center gap-3 mb-6">
-          <div class="w-8 h-8 rounded-full bg-[#00A3FF]/10 border border-[#00A3FF]/30 flex items-center justify-center text-[#00A3FF]">
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      <section id="upload-panel" class="hidden mt-12 mb-6 animate-fade-in relative z-10 w-full max-w-4xl mx-auto">
+        <div class="flex items-center justify-center gap-3 mb-8 text-center flex-col md:flex-row">
+          <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#EAB308] to-[#FACC15] flex items-center justify-center text-black shadow-[0_0_20px_rgba(234,179,8,0.4)]">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><path d="M16 16l-4-4-4 4"/></svg>
           </div>
-          <h2 class="text-xl md:text-2xl font-bold text-white">Panel de Instructor — Subir Vídeo</h2>
-          <span class="text-[10px] font-black uppercase tracking-wider bg-[#00A3FF]/10 text-[#00A3FF] border border-[#00A3FF]/30 px-2 py-0.5 rounded">Acceso Restringido</span>
+          <div>
+            <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight">STUDIO CREADOR</h2>
+            <span id="upload-panel-badge" class="text-[10px] font-black uppercase tracking-wider text-[#EAB308] px-2 py-0.5 mt-1 block text-center md:text-left">ACCESO COACH</span>
+          </div>
         </div>
 
-        <div class="bg-[#111C2A] border border-white/5 rounded-3xl p-6 md:p-8 space-y-6">
+        <div class="bg-[#0b1016] border border-white/10 shadow-2xl shadow-black/80 rounded-[2rem] p-6 md:p-10 space-y-6 relative overflow-hidden backdrop-blur-xl">
           
           <!-- Estado del proceso -->
           <div id="upload-status" class="hidden items-center gap-3 p-4 rounded-xl border">
@@ -454,7 +435,7 @@ const PROGRESO_HABILIDADES = [
             </div>
             <div class="md:col-span-2">
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Descripción</label>
-              <textarea id="field-descripcion" rows="3" placeholder="Descripción breve del contenido del vídeo..." class="input-dark w-full resize-none"></textarea>
+              <textarea id="field-descripcion" rows="3" placeholder="Descripción breve del contenido del vídeo...\n00:00 Inicio\n00:20 Parte 1\n00:40 Parte 2\n01:00 Fin" class="input-dark w-full resize-none"></textarea>
             </div>
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Instructor</label>
@@ -474,16 +455,29 @@ const PROGRESO_HABILIDADES = [
             </div>
 
             <!-- Zona de arrastre de vídeo -->
-            <div class="md:col-span-2">
-              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Archivo de Vídeo *</label>
-              <div id="drop-zone" class="relative border-2 border-dashed border-white/10 hover:border-[#00A3FF]/40 rounded-2xl p-10 text-center transition-colors cursor-pointer group">
+            <div class="md:col-span-2 mt-4 relative">
+              <label class="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                 ARCHIVO DE VÍDEO *
+                 <div class="group relative cursor-help">
+                    <svg class="w-4 h-4 text-slate-500 hover:text-[#EAB308] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-4 bg-slate-800 text-slate-300 text-xs rounded-xl shadow-2xl border border-white/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 tooltip-glow">
+                      <p class="font-bold text-white mb-2 text-sm">Guía de subida</p>
+                      <ul class="list-disc pl-4 space-y-1 text-[11px]">
+                        <li><strong class="text-white">Formatos:</strong> MP4, MOV, WEBM.</li>
+                        <li><strong class="text-white">Resolución:</strong> 1080p o 4K recomendado.</li>
+                        <li><strong class="text-white">Optimización:</strong> Se generará HLS con Mux Automáticamente. Max. 2GB.</li>
+                      </ul>
+                    </div>
+                 </div>
+              </label>
+              <div id="drop-zone" class="relative border border-dashed border-slate-700 hover:border-[#EAB308]/50 bg-slate-900/50 hover:bg-[#EAB308]/5 rounded-2xl p-12 text-center transition-all cursor-pointer group">
                 <input id="file-input" type="file" accept="video/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" />
-                <svg class="w-12 h-12 mx-auto mb-4 text-slate-600 group-hover:text-[#00A3FF]/60 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                  <path d="m21 15-5-5-5 5"/><path d="M16 10v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9"/><rect x="3" y="3" width="18" height="5" rx="1"/>
-                </svg>
-                <p class="text-slate-300 font-medium mb-1">Arrastra tu vídeo aquí</p>
-                <p class="text-slate-500 text-sm">o haz clic para seleccionar desde tu equipo</p>
-                <p id="selected-file-name" class="mt-3 text-xs text-[#00A3FF] hidden font-mono"></p>
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 group-hover:text-[#EAB308] group-hover:border-[#EAB308]/30 transition-all shadow-lg">
+                  <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                </div>
+                <p class="text-white font-bold mb-1 text-base group-hover:text-[#EAB308] transition-colors">Arrastra tu vídeo aquí</p>
+                <p class="text-slate-500 text-sm">o haz clic para explorar tus archivos</p>
+                <p id="selected-file-name" class="mt-4 text-xs font-semibold text-[#EAB308] hidden bg-[#EAB308]/10 inline-block px-4 py-1.5 rounded-full border border-[#EAB308]/20"></p>
               </div>
               
               <!-- Barra de progreso subida -->
@@ -844,27 +838,222 @@ const PROGRESO_HABILIDADES = [
           .from('perfiles')
           .select('horas_entrenamiento, rol')
           .eq('id', session.user.id)
-          .single();
+          .maybeSingle();
           
-        const horasTotales = perfilData?.horas_entrenamiento || 0;
+        // Obtener historial de videos con detalle para las tres tareas: Horas Semanales, Racha y Listado
+        const { data: historialData } = await supabase
+          .from('historial_videos')
+          .select('tiempo_actual, actualizado_en, completado, video_id, videos(id, titulo, duracion)')
+          .eq('usuario_id', session.user.id)
+          .order('actualizado_en', { ascending: false });
 
-        if (hoursEl) hoursEl.textContent = horasTotales.toString();
-        if (titleEl) titleEl.textContent = obtenerTituloPorHoras(horasTotales);
+        let weeklySeconds = 0;
+        let rachaSemanal = 0;
 
-        // Si el usuario es instructor o admin → mostrar panel de subida
+        if (historialData) {
+          const now = new Date();
+          // Inicio de semana (Lunes)
+          const jsDay = now.getDay();
+          const day = jsDay === 0 ? 6 : jsDay - 1; 
+          const startOfWeek = new Date(now);
+          startOfWeek.setDate(now.getDate() - day);
+          startOfWeek.setHours(0,0,0,0);
+
+          const daysWithVideos = new Set();
+          
+          historialData.forEach(item => {
+            const date = new Date(item.actualizado_en);
+            
+            // Hrs semanales
+            if (date >= startOfWeek) {
+              weeklySeconds += (Number(item.tiempo_actual) || 0);
+            }
+            
+            // Racha
+            const dateStr = date.toISOString().split('T')[0];
+            daysWithVideos.add(dateStr);
+          });
+
+          const horasSemana = Math.floor(weeklySeconds / 3600);
+          const horasTotales = (perfilData?.horas_entrenamiento || 0) + horasSemana;
+
+          // Cálculo Racha
+          let streak = 0;
+          let checkDate = new Date(now);
+          checkDate.setHours(0,0,0,0);
+          
+          let dateStr = checkDate.toISOString().split('T')[0];
+          
+          // Allow yesterday to keep streak if today is 0
+          if (!daysWithVideos.has(dateStr)) {
+            checkDate.setDate(checkDate.getDate() - 1);
+            dateStr = checkDate.toISOString().split('T')[0];
+          }
+
+          while (daysWithVideos.has(dateStr)) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+            dateStr = checkDate.toISOString().split('T')[0];
+          }
+
+          rachaSemanal = streak;
+
+          // Actualizar UI
+          if (hoursEl) hoursEl.textContent = horasSemana.toString();
+          if (titleEl) titleEl.textContent = obtenerTituloPorHoras(horasTotales);
+          
+          const streakEl = document.getElementById('profile-streak');
+          if (streakEl) streakEl.textContent = rachaSemanal.toString();
+          
+          const weeklyIncEl = document.getElementById('profile-weekly-inc');
+          if (weeklyIncEl) weeklyIncEl.textContent = `+${Math.round(weeklySeconds/3600*10)/10}h esta semana`;
+
+          // Inyectar Historial Completo Real
+          const videosCompletados = historialData.filter((item: any) => item.completado === true);
+          const histContainer = document.getElementById('profile-historial-list');
+          if (histContainer) {
+            if (videosCompletados.length === 0) {
+               histContainer.innerHTML = '<p class="text-sm text-slate-500 py-4 text-center">Aún no has completado ningún vídeo.</p>';
+            } else {
+               histContainer.innerHTML = videosCompletados.slice(0, 5).map((item: any) => {
+                  const v = item.videos;
+                  if (!v) return '';
+                  const dur = v.duracion ? Math.floor(v.duracion / 60) + ' mins' : 'VOD';
+                  const isCompleted = item.completado ? 'Completado' : 'Pendiente';
+                  const dateObj = new Date(item.actualizado_en);
+                  const dateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }).toUpperCase();
+                  return `
+                  <a href="/reproductor?id=${v.id}" class="flex items-center gap-4 bg-[#111C2A] border border-white/5 p-4 rounded-2xl hover:bg-slate-800 transition-colors cursor-pointer group">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#00A3FF]/10 text-[#00A3FF]">
+                      <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
+                    <div class="flex-grow min-w-0">
+                      <h4 class="font-bold text-sm text-slate-100 truncate group-hover:text-[#00A3FF] transition-colors">${v.titulo}</h4>
+                      <div class="text-xs text-slate-400 mt-1 flex gap-2 items-center">
+                        <span>VOD</span>
+                        <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+                        <span>${dur}</span>
+                        <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+                        <span class="${item.completado ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${isCompleted}</span>
+                      </div>
+                    </div>
+                    <div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">
+                      ${dateStr}
+                    </div>
+                  </a>
+                  `;
+               }).join('');
+            }
+          }
+        }
+
+        // 5. LÓGICA DE COACH
         const rol = perfilData?.rol || 'usuario';
         if (rol === 'instructor' || rol === 'admin') {
-          const uploadPanel = document.getElementById('upload-panel');
-          if (uploadPanel) {
-            uploadPanel.classList.remove('hidden');
-            uploadPanel.classList.add('block');
-          }
-          inicializarUploader(session.user.id, nombreUsuario, defaultAvatarUrl);
+           // Insignia COACH
+           const profileCard = document.getElementById('profile-header-card');
+           if (profileCard) {
+              profileCard.classList.add('border-[#EAB308]/30', 'shadow-[0_0_40px_rgba(234,179,8,0.15)]');
+              profileCard.classList.remove('border-white/5', 'shadow-black/20');
+           }
+           const avatarRing = document.getElementById('profile-avatar-ring');
+           if (avatarRing) {
+             avatarRing.classList.replace('from-[#00A3FF]', 'from-[#EAB308]');
+             avatarRing.classList.replace('to-[#00E5FF]', 'to-[#FDE047]');
+             avatarRing.classList.replace('shadow-[0_0_20px_rgba(0,163,255,0.4)]', 'shadow-[0_0_20px_rgba(234,179,8,0.4)]');
+           }
+           const coachBadge = document.getElementById('profile-coach-badge');
+           if (coachBadge) {
+             coachBadge.textContent = rol === 'admin' ? 'ADMINISTRADOR' : 'INSTRUCTOR';
+             coachBadge.classList.replace('hidden', 'inline-block');
+           }
+           
+           if (titleEl) titleEl.textContent = rol === 'admin' ? 'Administrador' : 'Instructor';
+
+           // Mostrar Panel de Subida
+           const uploadPanel = document.getElementById('upload-panel');
+           if (uploadPanel) {
+              uploadPanel.classList.remove('hidden');
+              uploadPanel.classList.add('block');
+           }
+           
+           const uploadPanelBadge = document.getElementById('upload-panel-badge');
+           if (uploadPanelBadge) {
+             uploadPanelBadge.textContent = rol === 'admin' ? 'ACCESO ADMINISTRADOR' : 'ACCESO INSTRUCTOR';
+           }
+
+           inicializarUploader(session.user.id, nombreUsuario, defaultAvatarUrl);
         }
         
       } catch (err) {
         console.error("No se pudo cargar perfil BD", err);
       }
+      
+      // ===== LÓGICA DE ACTUALIZACIÓN DEL HISTORIAL (Real-Time SPA Simulation) =====
+      // Escuchamos el evento emitido desde el reproductor cuando COMPLETAMOS un vídeo
+      window.addEventListener('freedom:videoCompleted', async (e: any) => {
+         const detail = e.detail;
+         if (!detail || !detail.videoId) return;
+
+         try {
+           // Traemos los datos de ese vídeo específico desde la tabla videos para rellenar la ficha
+           const { data: videoGuardado } = await supabase
+             .from('videos')
+             .select('id, titulo, duracion')
+             .eq('id', detail.videoId)
+             .single();
+             
+           if (!videoGuardado) return;
+
+           const histContainer = document.getElementById('profile-historial-list');
+           if (!histContainer) return;
+
+           // Quitar el mensaje vacío si existía
+           if (histContainer.innerHTML.includes('Aún no has visto')) {
+             histContainer.innerHTML = '';
+           }
+
+           const dur = videoGuardado.duracion ? Math.floor(videoGuardado.duracion / 60) + ' mins' : 'VOD';
+           const dateStr = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }).toUpperCase();
+           
+           const nuevaFicha = `
+           <a href="/reproductor?id=${videoGuardado.id}" class="flex items-center gap-4 bg-[#111C2A] border border-emerald-500/30 p-4 rounded-2xl hover:bg-slate-800 transition-colors cursor-pointer group animate-fade-in relative overflow-hidden">
+             <!-- Destello de "Recién Añadido" -->
+             <div class="absolute inset-0 bg-emerald-500/5 pointer-events-none"></div>
+             
+             <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-emerald-500/10 text-emerald-400">
+               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+             </div>
+             <div class="flex-grow min-w-0">
+               <h4 class="font-bold text-sm text-slate-100 truncate group-hover:text-emerald-400 transition-colors">${videoGuardado.titulo}</h4>
+               <div class="text-xs text-slate-400 mt-1 flex gap-2 items-center">
+                 <span class="text-emerald-400 font-bold uppercase tracking-wider text-[10px]">Nuevo</span>
+                 <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+                 <span>${dur}</span>
+                 <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+                 <span class="text-slate-400">Pendiente</span>
+               </div>
+             </div>
+             <div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">
+               ${dateStr}
+             </div>
+           </a>
+           `;
+
+           // Insertarlo arriba del todo
+           histContainer.insertAdjacentHTML('afterbegin', nuevaFicha);
+           
+           // Si hay más de 5 en la lista, quitamos el último para no saturar 
+           // (ya que por UI mostramos los 5 recientes)
+           if (histContainer.children.length > 5) {
+             histContainer.removeChild(histContainer.lastElementChild as Node);
+           }
+
+         } catch (error) {
+           console.error('Error insertando render optimista', error);
+         }
+      });
+      
     } else {
       // Sin sesión: mostrar ticker con datos fallback
       cargarNotificacionesTicker();

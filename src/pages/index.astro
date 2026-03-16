@@ -28,7 +28,7 @@ const NUEVOS_DE_BD = ultimosVideos.map((v: any) => ({
   tag: v.dificultad?.toUpperCase() || "INTERMEDIO",
   time: v.duracion ? `${Math.floor(v.duracion / 60).toString().padStart(2, '0')}:${(v.duracion % 60).toString().padStart(2, '0')}` : "00:00",
   rating: "5.0",
-  img: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1` : "https://images.unsplash.com/photo-1549476464-37392f717541?q=80&w=1000&auto=format&fit=crop"
+  img: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1&width=600` : "https://images.unsplash.com/photo-1549476464-37392f717541?q=80&w=1000&auto=format&fit=crop"
 }));
 
 const LO_NUEVO = NUEVOS_DE_BD;
@@ -128,8 +128,8 @@ const CATEGORIAS = [
 
           {LO_NUEVO.map((item) => (
             <a href={item.id ? `/reproductor?id=${item.id}` : "/reproductor"} class="group cursor-pointer relative rounded-2xl overflow-hidden aspect-[16/9] border border-white/5 mx-auto w-full max-w-2xl transform transition-transform duration-500 hover:scale-[1.02] hover:shadow-2xl hover:shadow-[#00A3FF]/20 block">
-               <div class="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-black/20 to-transparent z-10 pointer-events-none opacity-80 group-hover:opacity-90 transition-opacity"></div>
-               <img src={item.img} alt={item.title} class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"/>
+               <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none opacity-80 group-hover:opacity-90 transition-opacity"></div>
+               <img src={item.img} alt={item.title} loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"/>
                
                <div class="absolute bottom-0 left-0 p-8 z-20 w-full">
                   <span class="inline-block bg-[#00A3FF]/20 text-[#0EEDFF] text-xs font-bold px-3 py-1 rounded backdrop-blur border border-[#00A3FF]/30 mb-3">{item.tag}</span>
@@ -221,7 +221,23 @@ const CATEGORIAS = [
         .limit(4);
 
       if (error) throw error;
-      if (!historial || historial.length === 0) return;
+      if (!historial || historial.length === 0) {
+        section.classList.remove('hidden');
+        grid.innerHTML = `
+          <div class="col-span-1 md:col-span-2 lg:col-span-4 flex flex-col items-center justify-center py-16 text-center bg-[#111C2A] rounded-2xl border border-white/5 shadow-inner">
+            <svg class="w-16 h-16 text-[#00A3FF]/40 mb-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>
+            </svg>
+            <h3 class="text-2xl font-bold text-white mb-2">Aún no has empezado a entrenar.</h3>
+            <p class="text-slate-400 font-medium mb-8 max-w-md mx-auto">¡Explora nuestro catálogo para encontrar los mejores tutoriales y lleva tu movimiento al siguiente nivel!</p>
+            <a href="/catalogo" class="btn-primary inline-flex items-center gap-3 px-8 py-3.5 text-sm font-bold shadow-[0_0_20px_rgba(0,163,255,0.3)] hover:-translate-y-1 transition-transform">
+              <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              Explorar Catálogo
+            </a>
+          </div>
+        `;
+        return;
+      }
 
       // Hay videos para ver
       section.classList.remove('hidden');
@@ -230,7 +246,7 @@ const CATEGORIAS = [
       for (const reg of historial) {
         const video = (reg as any).videos;
         const img = video.mux_playback_id 
-          ? `https://image.mux.com/${video.mux_playback_id}/thumbnail.webp?time=${reg.tiempo_actual || 1}`
+          ? `https://image.mux.com/${video.mux_playback_id}/thumbnail.webp?time=${reg.tiempo_actual || 1}&width=600`
           : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=600&auto=format&fit=crop";
         
         let progressPct = 0;
@@ -247,8 +263,9 @@ const CATEGORIAS = [
         html += `
           <a href="/reproductor?id=${video.id}" class="group block cursor-pointer">
             <div class="relative w-full aspect-[16/9] rounded-xl overflow-hidden mb-3 border border-white/5 transition-all duration-300 shadow-lg shadow-black/40 group-hover:shadow-[#00A3FF]/20 group-hover:border-[#008AE6]/50">
-              <img src="${img}" alt="${video.titulo}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
-              <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <img src="${img}" alt="${video.titulo}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"/>
+              <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10 pointer-events-none opacity-80 group-hover:opacity-90 transition-opacity"></div>
+              <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-20">
                 <div class="w-12 h-12 rounded-full bg-[#00A3FF]/90 flex items-center justify-center text-white backdrop-blur shadow-xl scale-90 group-hover:scale-100 transition-transform">
                    <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </div>

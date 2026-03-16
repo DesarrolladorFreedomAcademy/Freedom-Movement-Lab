@@ -9,7 +9,11 @@ export default defineConfig({
   output: 'server',
 
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    // Esto evita que Vite se reinicie a mitad del arranque
+    optimizeDeps: {
+      include: ['@supabase/supabase-js']
+    }
   },
 
   adapter: netlify()

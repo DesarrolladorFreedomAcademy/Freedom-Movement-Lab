@@ -54,7 +54,7 @@ body {
   background-color: #1E293B;
   color: #E2E8F0;
   border: 1px solid #334155;
-  border-radius: 9999px;
+  border-radius: 0.75rem; /* Reducido desde 9999px */
   padding: 0.5rem 1rem;
   outline: none;
   transition: all 0.2s;

@@ -179,11 +179,7 @@ try {
                   <h1 class="text-2xl md:text-3xl font-black text-white leading-tight">{VIDEO_DATA.title}</h1>
                </div>
 
-               <!-- Botón Completado Mobile y Desktop (El de desktop está a la derecha del título, el de móvil baja abajo. Usaremos uno adaptativo) -->
-               <button id="btn-completar-desktop" class="btn-marcar-completado hidden md:flex btn-primary items-center gap-2 text-sm font-bold shadow-[0_0_20px_rgba(0,163,255,0.2)] whitespace-nowrap px-8 transition-colors">
-                  <svg class="w-5 h-5 bg-white text-[#00A3FF] rounded-full p-0.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                  <span class="pointer-events-none text-btn">Marcar como Completado</span>
-               </button>
+               <!-- Botones removidos por solicitud -->
             </div>
 
             <div class="text-sm font-medium text-slate-400 mb-6 flex items-center gap-2">
@@ -225,11 +221,7 @@ try {
               </button>
             </div>
             
-            <!-- Botón Completado gigante exclusivo Mobile -->
-            <button id="btn-completar-mobile" class="btn-marcar-completado md:hidden w-full btn-primary flex justify-center items-center gap-2 text-sm font-bold shadow-lg shadow-[#00A3FF]/20 mb-6 py-4 rounded-xl transition-colors">
-              <svg class="w-5 h-5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="16 8 12 16 8 13"/></svg>
-              <span class="pointer-events-none text-btn">Mark as Completed</span>
-            </button>
+            <!-- Botón Completado gigante exclusivo Mobile removido -->
 
             <!-- Decripción -->
             <div class="text-[15px] leading-relaxed text-slate-300 w-full md:max-w-[90%] font-medium">
@@ -471,11 +463,16 @@ try {
 
   // ==== LÓGICA DE HISTORIAL Y PROGRESO (Seguir Viendo) ====
   let currentUserId: string | null = null;
-  const currentVideoId = document.getElementById('video-owner-controls')?.getAttribute('data-video-id'); // Re-usamos este ID
+  const currentVideoId = document.getElementById('video-owner-controls')?.getAttribute('data-video-id');
 
-  let watchIntervalTimer: number | null = null;
   let lastSavedTime = 0;
-  let dbCompletado = false; // estado actual devuelto por BD
+  let dbCompletado = false; 
+
+  // --- LÓGICA UMBRAL 5 SEGUNDOS ---
+  let hasBeenLogged = false; // Flag para asegurar una sola petición por sesión
+  let realWatchTimeSeconds = 0; // Tiempo real acumulado de visualización
+  let lastCheckedTime = 0; // Para el dily-delta
+  const LOG_THRESHOLD = 5; // Segundos reales de visualización necesarios (bajado a 5s para pruebas más ágiles)
 
   async function initTracking() {
     if (!currentVideoId || !player) return;
@@ -491,7 +488,7 @@ try {
       .select('tiempo_actual, completado')
       .eq('usuario_id', currentUserId)
       .eq('video_id', currentVideoId)
-      .single();
+      .maybeSingle();
 
     if (historial) {
       dbCompletado = historial.completado || false;
@@ -514,76 +511,60 @@ try {
       if (dbCompletado) toggleCompletedUI(true);
     }
 
-    // 2. Guardar progreso periódicamente mientras se reproduce
-    // Guardamos cada 5 segundos para no saturar DB
+    // 2. Guardar progreso periódicamente y Loguear en Threshold
     player.addEventListener('timeupdate', () => {
-      if (dbCompletado || !currentUserId) return; // Si ya completó, no machacamos el tiempo actual
+      if (!currentUserId) return; 
       
       const currentTime = Math.floor(player.currentTime);
-      // Evitar llamadas infinitas, actualizar solo si han pasado > 5 seundos
-      if (Math.abs(currentTime - lastSavedTime) > 5) {
+      
+      // -- Lógica de Tiempo Real de Visualización (prevenir seeks) --
+      // Si el delta entre el tiempo actual y el anterior es muy grande, probablemente hizo un "seek" (adelantó).
+      // Solo sumamos tiempo real si la reproducción avanza con normalidad (ej. delta entre 0 y 3 segundos)
+      const delta = player.currentTime - lastCheckedTime;
+      if (delta > 0 && delta < 3 && !player.paused) {
+         realWatchTimeSeconds += delta;
+      }
+      lastCheckedTime = player.currentTime;
+
+      // -- Lógica del Umbral (LOG_THRESHOLD) --
+      // Verificamos si cruzó los segundos reales de visualización y aún no se guardó en esta sesión
+      if (!hasBeenLogged && realWatchTimeSeconds >= LOG_THRESHOLD) {
+         hasBeenLogged = true;
+         console.log(`⏱️ Threshold de ${LOG_THRESHOLD}s superado en tiempo de view puro. Registrando en la Base de Datos...`);
+         // Hacemos el primer guardado sustancial en la BD
+         saveProgress(currentTime, false, true); 
+      }
+
+      // -- Guardado Periódico Conservador --
+      // Evitamos sobresaturar guardando progreso de continuar-viendo cada 5 segundos si ya completó
+      if (dbCompletado) return; 
+      
+      let isNowCompleted = false;
+      if (player.duration > 0 && (player.duration - currentTime < 5 || currentTime / player.duration >= 0.95)) {
+         isNowCompleted = true;
+         dbCompletado = true;
+      }
+
+      // Guardamos la posición cada 5 segundos (o si se acaba de completar)
+      if (Math.abs(currentTime - lastSavedTime) > 5 || isNowCompleted) {
         lastSavedTime = currentTime;
-        saveProgress(currentTime, false);
+        
+        // El tercer parámetro 'false' es porque ya no usamos la notificación en los 10 segundos 
+        // para el Historial (ahora el Historial pide que esté completado)
+        saveProgress(currentTime, isNowCompleted, false, isNowCompleted);
       }
     });
 
     // 3. Manejar el Botón "Marcar como Completado"
-    const completeBtns = document.querySelectorAll('.btn-marcar-completado');
-    completeBtns.forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!currentUserId) return alert("Debes iniciar sesión para guardar progreso.");
-        
-        const isNowCompleted = !dbCompletado;
-        const timeToSave = isNowCompleted ? Math.floor(player.duration || player.currentTime || 0) : Math.floor(player.currentTime || 0);
-        
-        const btnSpans = document.querySelectorAll('.btn-marcar-completado .text-btn');
-        btnSpans.forEach(span => span.textContent = 'Guardando...');
+    // Botones removidos por solicitud
 
-        const success = await saveProgress(timeToSave, isNowCompleted);
-        
-        if (success) {
-           dbCompletado = isNowCompleted;
-           toggleCompletedUI(dbCompletado);
-        } else {
-           // Error visual
-           btnSpans.forEach(span => span.textContent = 'Error');
-           setTimeout(() => toggleCompletedUI(dbCompletado), 2000);
-        }
-      });
-    });
   }
 
   function toggleCompletedUI(isCompleted: boolean) {
-     const completeBtns = document.querySelectorAll('.btn-marcar-completado');
-     completeBtns.forEach(btn => {
-        const span = btn.querySelector('.text-btn');
-        const icon = btn.querySelector('svg');
-        
-        if (isCompleted) {
-           btn.classList.replace('btn-primary', 'bg-emerald-500/20');
-           btn.classList.add('border', 'border-emerald-500/50', 'text-emerald-400');
-           if (icon) {
-             icon.classList.remove('bg-white', 'text-[#00A3FF]');
-             icon.classList.add('text-emerald-400');
-             icon.innerHTML = `<polyline points="20 6 9 17 4 12"/>`; // Check simple
-           }
-           if (span) span.textContent = 'Completado';
-        } else {
-           btn.className = btn.className.replace(/bg-emerald-500\/20|border|border-emerald-500\/50|text-emerald-400/g, '').trim();
-           btn.classList.add('btn-primary');
-           if (icon) {
-             icon.classList.add('bg-white', 'text-[#00A3FF]');
-             icon.classList.remove('text-emerald-400');
-             // Círculo por defecto en móvil o check relleno en pc
-             if (btn.id === 'btn-completar-mobile') icon.innerHTML = `<circle cx="12" cy="12" r="10"/><polyline points="16 8 12 16 8 13"/>`;
-             else icon.innerHTML = `<polyline points="20 6 9 17 4 12"/>`;
-           }
-           if (span) span.textContent = btn.id === 'btn-completar-mobile' ? 'Mark as Completed' : 'Marcar como Completado';
-        }
-     });
+     // Removido por solicitud - UI ya no requiere estado completado visual para botones que no existen
   }
 
-  async function saveProgress(tiempo: number, isCompleted: boolean) {
+  async function saveProgress(tiempo: number, isCompleted: boolean, isInitialThresholdLog = false, triggerCompletedEvent = false) {
      if (!currentUserId || !currentVideoId) return false;
      
      const { error } = await supabase.from('historial_videos').upsert({
@@ -600,6 +581,19 @@ try {
        console.error("Error guardando progreso:", error);
        return false;
      }
+
+     // console.log para debug del usuario en F12
+     if (isInitialThresholdLog) {
+       console.log("✅ El progreso del vídeo se ha registrado ahora en 'Seguir Viendo'.");
+     }
+
+     if (triggerCompletedEvent) {
+        console.log(`🏆 Vídeo completado al 100%! Pasa a formar parte visible del Historial General.`);
+        window.dispatchEvent(new CustomEvent('freedom:videoCompleted', {
+           detail: { videoId: currentVideoId, time: tiempo }
+        }));
+     }
+
      return true;
   }
 

@@ -39,7 +39,6 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
 
     <!-- Links -->
     <div class="flex items-center gap-6 text-sm font-medium">
-      <a href="/" class={`transition-colors ${currentPath === '/' ? 'text-white' : 'text-slate-300 hover:text-[#00A3FF]'}`}>Inicio</a>
       <a href="/catalogo" class={`transition-colors ${currentPath.startsWith('/catalogo') ? 'text-white' : 'text-slate-300 hover:text-[#00A3FF]'}`}>Catálogo</a>
       <a href="/entrenamiento" class={`transition-colors ${currentPath.startsWith('/entrenamiento') ? 'text-white' : 'text-slate-300 hover:text-[#00A3FF]'}`}>Mi entrenamiento</a>
     </div>
@@ -79,7 +78,7 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
       </button>
 
       <!-- Popup Dropdown -->
-      <div id="noti-dropdown" class="absolute right-0 top-full mt-2 md:mt-4 w-[calc(100vw-2rem)] sm:w-80 max-w-[320px] bg-[#1E293B] border border-white/10 rounded-xl shadow-2xl shadow-black/50 opacity-0 invisible transform scale-95 transition-all duration-200 origin-top-right z-50">
+      <div id="noti-dropdown" class="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-[320px] bg-gray-900 border border-white/10 rounded-lg shadow-lg opacity-0 invisible transform scale-95 transition-all duration-200 origin-top-right z-50">
         <!-- Header -->
         <div class="px-4 py-3 border-b border-white/5 flex items-center justify-between">
           <h3 class="font-bold text-white text-sm">Notificaciones</h3>
@@ -91,10 +90,27 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
         
         <!-- List (contenido dinámico) -->
         <div id="noti-list" class="max-h-[300px] overflow-y-auto">
-          <!-- Estado de carga -->
-          <div id="noti-loading" class="p-6 text-center">
-            <div class="w-5 h-5 border-2 border-[#00A3FF] border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-            <p class="text-xs text-slate-500">Cargando...</p>
+          <!-- Estado de carga Skeleton Tailwind -->
+          <div id="noti-loading" class="p-4 space-y-4">
+            <div class="animate-pulse flex space-x-4 w-full">
+              <div class="rounded-lg bg-slate-700 h-10 w-16"></div>
+              <div class="flex-1 space-y-2 py-1">
+                <div class="h-2 bg-slate-700 rounded w-3/4"></div>
+                <div class="space-y-2">
+                  <div class="h-2 bg-slate-700 rounded w-full"></div>
+                  <div class="h-2 bg-slate-700 rounded w-5/6"></div>
+                </div>
+              </div>
+            </div>
+            <div class="animate-pulse flex space-x-4 w-full">
+              <div class="rounded-lg bg-slate-700 h-10 w-16"></div>
+              <div class="flex-1 space-y-2 py-1">
+                <div class="h-2 bg-slate-700 rounded w-1/2"></div>
+                <div class="space-y-2">
+                  <div class="h-2 bg-slate-700 rounded w-full"></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
         
@@ -349,7 +365,71 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
 
       currentUserId = session.user.id;
 
-      // 1. Obtener instructores seguidos
+      // Consultar el rol del usuario
+      const { data: perfilInfo } = await supabase.from('perfiles').select('rol, nombre').eq('id', currentUserId).single();
+      const isCoach = perfilInfo?.rol === 'instructor' || perfilInfo?.rol === 'admin';
+
+      if (isCoach) {
+         notiList.innerHTML = `
+           <div class="p-3">
+             <div class="bg-gradient-to-r from-[#1E293B] to-[#0F172A] border border-[#EAB308]/30 px-4 py-3 rounded-xl flex items-center justify-between mb-3 shadow-[0_0_15px_rgba(234,179,8,0.1)]">
+               <div class="flex items-center gap-2">
+                 <svg class="w-4 h-4 text-[#EAB308]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><path d="M16 16l-4-4-4 4"/></svg>
+                 <span class="text-xs font-black text-[#EAB308] uppercase tracking-wider">Métricas Creador</span>
+               </div>
+               <span class="text-[10px] text-slate-400 uppercase font-bold tracking-widest bg-slate-800 px-2 py-0.5 rounded">Últimos 7 días</span>
+             </div>
+             
+             <div class="space-y-2">
+               <!-- Nuevos Seguidores -->
+               <div class="noti-item flex gap-3 items-center p-3 bg-white/5 hover:bg-white/10 transition-colors border border-white/5 rounded-xl relative overflow-hidden group">
+                 <div class="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                 <div class="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex flex-shrink-0 items-center justify-center relative z-10">
+                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                 </div>
+                 <div class="min-w-0 flex-1 relative z-10">
+                   <p class="text-sm text-slate-200 leading-snug"><span class="font-bold text-emerald-400 text-base">+24</span> nuevos traceurs comenzaron a seguirte</p>
+                   <p class="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide font-bold">¡La comunidad crece!</p>
+                 </div>
+               </div>
+               
+               <!-- Visualizaciones -->
+               <div class="noti-item flex gap-3 items-center p-3 bg-white/5 hover:bg-white/10 transition-colors border border-white/5 rounded-xl relative overflow-hidden group">
+                 <div class="absolute inset-0 bg-[#00A3FF]/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                 <div class="w-10 h-10 rounded-full bg-[#00A3FF]/10 border border-[#00A3FF]/20 text-[#00A3FF] flex flex-shrink-0 items-center justify-center relative z-10">
+                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                 </div>
+                 <div class="min-w-0 flex-1 relative z-10">
+                   <p class="text-sm text-slate-200 leading-snug"><span class="font-bold text-[#00A3FF] text-base">4,280</span> min. de reproducción acumulados.</p>
+                   <p class="text-[10px] text-slate-500 mt-0.5 uppercase tracking-wide font-bold">↑ 18% respecto a la semana anterior</p>
+                 </div>
+               </div>
+
+               <!-- Interacciones -->
+               <div class="noti-item flex gap-3 items-center p-3 bg-white/5 hover:bg-white/10 transition-colors border border-white/5 rounded-xl relative overflow-hidden group">
+                 <div class="absolute inset-0 bg-rose-500/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                 <div class="w-10 h-10 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 flex flex-shrink-0 items-center justify-center relative z-10">
+                   <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                 </div>
+                 <div class="min-w-0 flex-1 relative z-10">
+                   <p class="text-[13px] text-slate-200 leading-snug"><span class="font-bold text-white">Alex P.</span> ha guardado en favoritos tu tutorial <span class="text-slate-400 font-semibold italic">"Fundamentos Wall Run"</span>.</p>
+                   <p class="text-[10px] text-slate-500 mt-1">Hace 2 horas</p>
+                 </div>
+               </div>
+             </div>
+           </div>`;
+           
+         if(notiBadge) {
+           notiBadge.textContent = perfilInfo?.rol === 'admin' ? 'PANEL ADMIN' : 'PANEL INSTRUCTOR';
+           notiBadge.classList.replace('text-[#00A3FF]', 'text-[#EAB308]');
+           notiBadge.classList.remove('hidden');
+         }
+         if (btnMarcarVistas) btnMarcarVistas.classList.add('hidden');
+         hideRedDots();
+         return;
+      }
+
+      // 1. Lógica Normal: Obtener instructores seguidos
       const { data: seguimientos, error: segError } = await supabase
         .from('seguimientos')
         .select('instructor_nombre')
