@@ -26,7 +26,7 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
 
   <!-- === DESKTOP LAYOUT (md:) === -->
   <!-- Left Links (Desktop) -->
-  <div class="hidden md:flex items-center gap-10">
+  <div class="hidden md:flex items-center gap-6 lg:gap-10">
     <!-- Brand -->
     <a href="/" class="flex items-center gap-2 group">
       <svg class="w-8 h-8 text-[#00A3FF] group-hover:text-[#00E5FF] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -38,9 +38,10 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
     </a>
 
     <!-- Links -->
-    <div class="flex items-center gap-6 text-sm font-medium">
+    <div class="flex items-center gap-4 lg:gap-6 text-sm font-medium">
       <a href="/catalogo" class={`transition-colors ${currentPath.startsWith('/catalogo') ? 'text-white' : 'text-slate-300 hover:text-[#00A3FF]'}`}>Catálogo</a>
       <a href="/entrenamiento" class={`transition-colors ${currentPath.startsWith('/entrenamiento') ? 'text-white' : 'text-slate-300 hover:text-[#00A3FF]'}`}>Mi entrenamiento</a>
+      <a href="/comunidad" class={`transition-colors ${currentPath.startsWith('/comunidad') ? 'text-white' : 'text-slate-300 hover:text-[#00A3FF]'}`}>Comunidad</a>
     </div>
   </div>
 

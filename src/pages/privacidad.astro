@@ -1,0 +1,74 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Nav from '../components/Nav.astro';
+---
+
+<Layout title="Política de Privacidad | Freedom Movement Lab">
+  <Nav />
+  
+  <main class="w-full min-h-screen pb-24 pt-24 md:pt-32 bg-[#0b1016]">
+    <div class="container mx-auto px-5 md:px-8 max-w-3xl animate-fade-in">
+      
+      <div class="bg-[#111C2A] border border-white/5 rounded-3xl p-8 md:p-12 shadow-2xl">
+        <h1 class="text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">Política de Privacidad</h1>
+        <p class="text-slate-400 mb-10 text-sm">Última actualización: Marzo de 2026</p>
+
+        <div class="space-y-8 text-slate-300 text-sm md:text-base leading-relaxed">
+          
+          <section>
+            <h2 class="text-[#00A3FF] font-bold text-xl mb-3">1. Información que Recopilamos</h2>
+            <p class="mb-3">En Freedom Movement Lab ("nosotros", "nuestro", o "FML"), la privacidad de tus datos es prioritaria. Recopilamos información para brindar e iterar sobre los servicios de nuestra academia en línea.</p>
+            <ul class="list-disc pl-5 space-y-2 text-slate-400">
+              <li><strong class="text-white">Información personal:</strong> Tu nombre, dirección de correo electrónico e imagen de perfil proporcionados al crear una cuenta y autenticarte en la plataforma a través de los diversos proveedores (p.ej. Google, correo electrónico).</li>
+              <li><strong class="text-white">Datos de uso y entrenamiento:</strong> Registramos de forma precisa qué vídeos visualizas, por cuánto tiempo, cuáles completas y tu historial general para calcular tus métricas como las "Horas de Entrenamiento" y mantener tu racha ("streak").</li>
+              <li><strong class="text-white">Datos de dispositivo:</strong> Información técnica estándar recopilada de manera automática como tu dirección IP, tipo de navegador e identificadores del dispositivo utilizado para optimizar la codificación del vídeo a través de Mux.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-[#00A3FF] font-bold text-xl mb-3">2. Cómo Utilizamos tu Información</h2>
+            <p class="mb-3">Utilizamos los datos que recolectamos exclusivamente para los siguientes propósitos:</p>
+            <ul class="list-disc pl-5 space-y-2 text-slate-400">
+              <li>Proveer, operar y mejorar las analíticas de tu entrenamiento dentro de tu panel de control y perfil.</li>
+              <li>Permitir que los algoritmos de la academia recomienden en qué punto dejaste tus clases ("Mi Entrenamiento" y "Siguiente Reto").</li>
+              <li>Detectar o prevenir fraudes cibernéticos y mitigar abusos a nuestra área técnica de distribución de vídeo.</li>
+              <li>Para que tus instructores logren revisar estadísticas globales y así generar mejor contenido adaptado al nivel de los alumnos.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-[#00A3FF] font-bold text-xl mb-3">3. Compartir tu Información con Terceros</h2>
+            <p class="mb-3">No vendemos tu información bajo ninguna circunstancia. Compartimos tu información a estrictos niveles de capa técnica unicamente con los proveedores necesarios para la operación de la web:</p>
+            <ul class="list-disc pl-5 space-y-2 text-slate-400">
+              <li><strong>Supabase:</strong> Quien funge como nuestro proveedor principal de autenticación, alojamiento de base de datos relacional y storage de perfiles, garantizando seguridad y regulaciones SOC2/HIPAA.</li>
+              <li><strong>Mux:</strong> Nuestro motor de codificación, alojamiento, y entrega de video premium. Mux puede requerir la recolección de métricas pasivas de ancho de banda y reproductor para asegurar calidad de streaming sin buffer (QoS).</li>
+            </ul>
+          </section>
+
+          <section>
+            <h2 class="text-[#00A3FF] font-bold text-xl mb-3">4. Tus Derechos como Usuario (RGPD)</h2>
+            <p class="text-slate-400">Tienes pleno derecho de reclamar qué datos tenemos sobre ti o de eliminar tu cuenta de nuestra base de datos irrevocablemente junto a todo tu historial en cualquier instante poniéndote en contacto con nuestro equipo de soporte técnico.</p>
+          </section>
+
+          <section>
+            <h2 class="text-[#00A3FF] font-bold text-xl mb-3">5. Seguridad</h2>
+            <p class="text-slate-400">Implementamos medidas tecnológicas de primer nivel tales como conexiones encriptadas TLS (Transport Layer Security) de extremo a extremo además de Políticas de Seguridad de Base de Datos de Nivel Fila (Row-Level Security) en todo nuestro software para proteger tus registros y visualizaciones privadas del acceso público no autorizado.</p>
+          </section>
+
+          <section>
+            <h2 class="text-[#00A3FF] font-bold text-xl mb-3">6. Contacto</h2>
+            <p class="text-slate-400">Si tienes dudas sobre el tratamiento de tu privacidad, por favor comunícate con nosotros escribiendo directamente a <strong>soporte@freedomacademygym.com</strong>.</p>
+          </section>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="border-t border-slate-800 bg-[#0F172A] relative z-10">
+    <div class="container xl:max-w-[1200px] mx-auto px-8 py-8 flex items-center justify-center text-xs text-slate-500 font-medium">
+      <p>© 2026 Freedom movement lab. Rompe los límites.</p>
+    </div>
+  </footer>
+</Layout>

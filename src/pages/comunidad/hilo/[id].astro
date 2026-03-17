@@ -1,0 +1,438 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import Nav from '../../../components/Nav.astro';
+import ReplyBox from '../../../components/ReplyBox.astro';
+import { supabase } from '../../../lib/supabase';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/comunidad');
+}
+
+// Obtener el hilo
+const { data: thread, error: threadError } = await supabase
+  .from('vw_forum_threads')
+  .select('*')
+  .eq('id', id)
+  .single();
+
+if (threadError || !thread) {
+  return Astro.redirect('/comunidad');
+}
+
+// Obtener los posts
+const { data: posts, error: postsError } = await supabase
+  .from('vw_forum_posts')
+  .select('*')
+  .eq('thread_id', id)
+  .order('created_at', { ascending: true });
+
+// Obtener sesión del usuario actual (servidor)
+const { data: { session } } = await supabase.auth.getSession();
+const currentUserId = session?.user?.id;
+
+// Obtener rol del usuario actual
+let currentUserRole = 'usuario';
+if (currentUserId) {
+  const { data: profile } = await supabase
+    .from('perfiles')
+    .select('rol')
+    .eq('id', currentUserId)
+    .maybeSingle(); // Usar maybeSingle por si el perfil aún no se sincronizó
+  if (profile) currentUserRole = profile.rol;
+}
+
+const canDeleteThread = currentUserId === thread.user_id || currentUserRole === 'admin' || currentUserRole === 'instructor';
+const isStaff = (role: string) => role === 'admin' || role === 'instructor';
+const getRoleLabel = (role: string) => role === 'admin' ? 'ADMIN' : 'TRAINER';
+const getRoleColor = (role: string) => role === 'admin' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+
+function formatTime(dateStr: string) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function renderPostContent(content: string) {
+  // Regex que busca o bien un tag <a> con URL de YouTube, o bien una URL de YouTube suelta (incluyendo parámetros extra)
+  const youtubeRegex = /<a [^>]*href=["'](?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})[^"']*["'][^>]*>.*?<\/a>|(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s<]*/g;
+  
+  return content.replace(youtubeRegex, (match, G1, G2) => {
+    const videoId = G1 || G2;
+    return `
+      <div class="my-8 aspect-video w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-black mx-auto">
+        <iframe 
+          class="w-full h-full"
+          src="https://www.youtube.com/embed/${videoId}" 
+          title="YouTube video player" 
+          frameborder="0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+          allowfullscreen>
+        </iframe>
+      </div>
+    `;
+  });
+}
+---
+
+<Layout title={thread.title}>
+  <Nav />
+  
+  <main class="max-w-5xl mx-auto px-4 py-8 md:py-12">
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-500 mb-6">
+      <a href="/comunidad" class="hover:text-[#00A3FF] transition-colors">Comunidad</a>
+      <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="9 18 15 12 9 6"/></svg>
+      <span class="text-slate-400">Hilo</span>
+    </nav>
+
+    <!-- Thread Header -->
+    <header class="mb-10">
+      <h1 class="text-3xl md:text-5xl font-black text-white leading-tight mb-4 tracking-tight">
+        {thread.title}
+      </h1>
+      <div class="flex items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full overflow-hidden border-2 border-[#00A3FF]/30 bg-[#111C2A] flex-shrink-0">
+            <img 
+              src={thread.author_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.author_name)}&background=111C2A&color=00A3FF`} 
+              alt="" 
+              class="w-full h-full object-cover" 
+              onerror={`this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(thread.author_name)}&background=111C2A&color=00A3FF';`}
+            />
+          </div>
+          <div>
+            <div class="flex items-center gap-2 mb-0.5">
+              <p class="text-sm font-bold text-white leading-none">{thread.author_name}</p>
+              {isStaff(thread.author_role) && (
+                <span class={`text-[8px] font-black px-1.5 py-0.5 rounded border ${getRoleColor(thread.author_role)} tracking-widest`}>
+                  {getRoleLabel(thread.author_role)}
+                </span>
+              )}
+            </div>
+            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Iniciado el {formatTime(thread.created_at)}</p>
+          </div>
+        </div>
+        
+        <button id="btn-delete-thread" class="hidden p-2 text-slate-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all" title="Eliminar Hilo" data-author-id={thread.user_id}>
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Posts List -->
+    <div class="space-y-8 mb-12">
+      {posts && posts.map((post, index) => (
+        <article class={`group relative flex flex-col md:flex-row gap-4 md:gap-8 p-6 rounded-2xl border border-white/5 transition-all duration-300 ${index === 0 ? 'bg-white/[0.03] border-white/10' : 'bg-transparent hover:bg-white/[0.02]'}`}>
+          
+          <!-- Author Info Side -->
+          <aside class="flex md:flex-col items-center md:items-start gap-3 md:w-40 shrink-0">
+            <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl overflow-hidden border-2 border-white/10 group-hover:border-[#008AE6]/50 transition-colors shadow-lg bg-[#111C2A] flex-shrink-0">
+              <img 
+                src={post.author_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author_name)}&background=111C2A&color=00A3FF`} 
+                alt="" 
+                class="w-full h-full object-cover" 
+                onerror={`this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(post.author_name)}&background=111C2A&color=00A3FF';`}
+              />
+            </div>
+            <div class="md:mt-2 text-center md:text-left w-full">
+              <div class="flex flex-col md:items-start gap-1">
+                <p class={`text-sm font-black transition-colors truncate max-w-[120px] md:max-w-none ${isStaff(post.author_role) ? 'text-white' : 'text-slate-200 group-hover:text-[#00A3FF]'}`}>
+                  {post.author_name}
+                </p>
+                {isStaff(post.author_role) && (
+                  <span class={`text-[8px] font-black px-1.5 py-0.5 rounded border ${getRoleColor(post.author_role)} tracking-widest w-fit`}>
+                    {getRoleLabel(post.author_role)}
+                  </span>
+                )}
+              </div>
+              <p class="text-[9px] font-black text-slate-500 uppercase tracking-tighter opacity-70 mt-1">
+                {formatTime(post.created_at)}
+              </p>
+            </div>
+          </aside>
+
+          <!-- Content Side -->
+          <div class="flex-1 min-w-0">
+            <div class="forum-content max-w-none">
+              <div set:html={renderPostContent(post.content)} />
+            </div>
+            
+            {/* Acciones del Post (solo si es el autor o staff, y NO es el primer post si se prefiere borrar el hilo completo arriba) */}
+               <div class="flex justify-end mt-4">
+                 <button class="btn-delete-post hidden p-1.5 text-slate-600 hover:text-rose-500 hover:bg-rose-500/10 rounded transition-all" data-post-id={post.id} data-author-id={post.user_id} title="Eliminar Respuesta">
+                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                 </button>
+               </div>
+          </div>
+        </article>
+      ))}
+    </div>
+
+    <!-- Reply Section -->
+    <section id="responder" class="pt-8 border-t border-white/10">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-2 h-8 bg-[#00A3FF] rounded-full shadow-[0_0_15px_rgba(0,163,255,0.5)]"></div>
+        <h2 class="text-2xl font-black text-white uppercase tracking-tight">Tu respuesta</h2>
+      </div>
+      
+      <ReplyBox threadId={thread.id} />
+    </section>
+
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../../../lib/supabase';
+
+  // --- Auth & Permission Check ---
+  async function checkPermissions() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const currentUserId = session.user.id;
+    const { data: profile } = await supabase.from('perfiles').select('rol').eq('id', currentUserId).maybeSingle();
+    const currentUserRole = profile?.rol || 'usuario';
+
+    // Hilo
+    const btnDeleteThread = document.getElementById('btn-delete-thread');
+    if (btnDeleteThread) {
+      const authorId = (btnDeleteThread as HTMLElement).dataset.authorId;
+      if (currentUserId === authorId || currentUserRole === 'admin' || currentUserRole === 'instructor') {
+        btnDeleteThread.classList.remove('hidden');
+      }
+    }
+
+    // Posts
+    const deletePostBtns = document.querySelectorAll('.btn-delete-post');
+    deletePostBtns.forEach(btn => {
+      const authorId = (btn as HTMLElement).dataset.authorId;
+      if (currentUserId === authorId || currentUserRole === 'admin' || currentUserRole === 'instructor') {
+        btn.classList.remove('hidden');
+      }
+    });
+
+    // Guardar ID en body para Realtime
+    document.body.dataset.userId = currentUserId;
+    document.body.dataset.userRole = currentUserRole;
+  }
+
+  checkPermissions();
+
+  // --- Deletion Logic ---
+
+  // Delete Thread
+  const btnDeleteThread = document.getElementById('btn-delete-thread');
+  if (btnDeleteThread) {
+    btnDeleteThread.addEventListener('click', async () => {
+      if (!confirm('¿Estás seguro de que quieres eliminar este hilo y todas sus respuestas? Esta acción no se puede deshacer.')) return;
+      
+      const threadId = btnDeleteThread.closest('main')?.querySelector('nav span')?.parentElement?.dataset.id || window.location.pathname.split('/').pop();
+      
+      try {
+        const { error } = await supabase
+          .from('forum_threads')
+          .delete()
+          .eq('id', threadId);
+
+        if (error) throw error;
+        window.location.href = '/comunidad';
+      } catch (err: any) {
+        alert('Error al eliminar el hilo: ' + err.message);
+      }
+    });
+  }
+
+  // Delete Individual Post
+  const deletePostBtns = document.querySelectorAll('.btn-delete-post');
+  deletePostBtns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const postId = (btn as HTMLElement).dataset.postId;
+      if (!postId) return;
+
+      if (!confirm('¿Estás seguro de que quieres eliminar esta respuesta?')) return;
+
+      try {
+        const { error } = await supabase
+          .from('forum_posts')
+          .delete()
+          .eq('id', postId);
+
+        if (error) throw error;
+        
+        // Animación de salida y recarga
+        const article = btn.closest('article');
+        if (article) {
+          article.classList.add('opacity-0', 'scale-95');
+          setTimeout(() => window.location.reload(), 300);
+        } else {
+          window.location.reload();
+        }
+      } catch (err: any) {
+        alert('Error al eliminar la respuesta: ' + err.message);
+      }
+    });
+  });
+
+  // --- Realtime Subscription ---
+  const threadId = window.location.pathname.split('/').pop();
+  const postsContainer = document.querySelector('.space-y-8.mb-12');
+  const currentUserId = (document.body.dataset.userId) || ''; // Podríamos pasar esto via data-attrs si fuera necesario, o pedirlo a session
+
+  if (postsContainer && threadId) {
+    supabase
+      .channel(`public:forum_posts:thread:${threadId}`)
+      .on('postgres_changes', { 
+        event: 'INSERT', 
+        schema: 'public', 
+        table: 'forum_posts',
+        filter: `thread_id=eq.${threadId}` 
+      }, async (payload) => {
+        // Obtenemos los datos extendidos del post
+        const { data: post } = await supabase
+          .from('vw_forum_posts')
+          .select('*')
+          .eq('id', payload.new.id)
+          .single();
+
+        if (post) {
+          // Función de formato local (duplicada para el cliente)
+          const formatTime = (dateStr: string) => {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+          };
+
+          // Lógica de renderizado local (YouTube)
+          const renderPostContent = (content: string) => {
+            const youtubeRegex = /<a [^>]*href=["'](?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})[^"']*["'][^>]*>.*?<\/a>|(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})[^\s<]*/g;
+            return content.replace(youtubeRegex, (_match: any, G1: any, G2: any) => {
+              const videoId = G1 || G2;
+              return `<div class="my-8 aspect-video w-full max-w-3xl overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-black mx-auto"><iframe class="w-full h-full" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div>`;
+            });
+          };
+
+          const isStaff = post.author_role === 'admin' || post.author_role === 'instructor';
+          const roleLabel = post.author_role === 'admin' ? 'ADMIN' : 'TRAINER';
+          const roleColor = post.author_role === 'admin' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+
+          const postHtml = `
+            <article class="group relative flex flex-col md:flex-row gap-4 md:gap-8 p-6 rounded-2xl border border-white/5 transition-all duration-300 bg-transparent hover:bg-white/[0.02] animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <aside class="flex md:flex-col items-center md:items-start gap-3 md:w-40 shrink-0">
+                <div class="w-12 h-12 md:w-16 md:h-16 rounded-2xl overflow-hidden border-2 border-white/10 group-hover:border-[#008AE6]/50 transition-colors shadow-lg bg-[#111C2A] flex-shrink-0">
+                  <img 
+                    src="${post.author_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author_name)}&background=111C2A&color=00A3FF`}" 
+                    alt="" 
+                    class="w-full h-full object-cover" 
+                    onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(post.author_name)}&background=111C2A&color=00A3FF';"
+                  />
+                </div>
+                <div class="md:mt-2 text-center md:text-left w-full">
+                  <div class="flex flex-col md:items-start gap-1">
+                    <p class="text-sm font-black transition-colors truncate max-w-[120px] md:max-w-none ${isStaff ? 'text-white' : 'text-slate-200 group-hover:text-[#00A3FF]'}">
+                      ${post.author_name}
+                    </p>
+                    ${isStaff ? `<span class="text-[8px] font-black px-1.5 py-0.5 rounded border ${roleColor} tracking-widest w-fit">${roleLabel}</span>` : ''}
+                  </div>
+                  <p class="text-[9px] font-black text-slate-500 uppercase tracking-tighter opacity-70 mt-1">
+                    ${formatTime(post.created_at)}
+                  </p>
+                </div>
+              </aside>
+              <div class="flex-1 min-w-0">
+                <div class="forum-content max-w-none">
+                  <div>${renderPostContent(post.content)}</div>
+                </div>
+              </div>
+            </article>
+          `;
+          postsContainer.insertAdjacentHTML('beforeend', postHtml);
+          
+          // Scroll suave hasta el nuevo mensaje si no fue el usuario actual quien lo envió
+          // (Aunque generalmente es mejor que aparezca y ya)
+        }
+      })
+      .on('postgres_changes', { 
+        event: 'DELETE', 
+        schema: 'public', 
+        table: 'forum_posts'
+      }, (payload) => {
+        const deletedId = payload.old.id;
+        const article = document.querySelector(`[data-post-id="${deletedId}"]`)?.closest('article');
+        if (article) {
+          article.classList.add('opacity-0', 'scale-95');
+          setTimeout(() => article.remove(), 300);
+        }
+      })
+      .subscribe();
+  }
+</script>
+
+<style is:global>
+  /* Premium Prose-like styles manually defined for better control */
+  .forum-content {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #cbd5e1; /* slate-300 */
+  }
+  .forum-content p {
+    margin-bottom: 1.5rem;
+  }
+  .forum-content strong {
+    color: #f8fafc; /* slate-50 */
+    font-weight: 800;
+  }
+  .forum-content em {
+    color: #e2e8f0; /* slate-200 */
+    font-style: italic;
+  }
+  .forum-content a {
+    color: #00A3FF;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .forum-content a:hover {
+    color: #60c5ff;
+  }
+  .forum-content ul {
+    list-style-type: none;
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .forum-content ul li {
+    position: relative;
+    margin-bottom: 0.5rem;
+  }
+  .forum-content ul li::before {
+    content: "";
+    position: absolute;
+    left: -1.25rem;
+    top: 0.6rem;
+    width: 6px;
+    height: 6px;
+    background-color: #00A3FF;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(0, 163, 255, 0.6);
+  }
+  .forum-content ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin-bottom: 1.5rem;
+    color: #94a3b8; /* slate-400 */
+  }
+  .forum-content ol li {
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+  }
+  .forum-content ol li::marker {
+    color: #00A3FF;
+    font-weight: 800;
+  }
+</style>

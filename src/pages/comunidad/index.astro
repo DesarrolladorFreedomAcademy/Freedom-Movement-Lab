@@ -1,0 +1,315 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../../components/Nav.astro';
+import { supabase } from '../../lib/supabase';
+
+// Forzar SSR en Astro
+export const prerender = false;
+
+// Obtener todas las categorías y los últimos hilos
+const { data: categories, error: catError } = await supabase
+  .from('forum_categories')
+  .select('*')
+  .order('created_at', { ascending: true });
+
+// Obtener los hilos recientes con datos del perfil del autor desde la vista
+const { data: threads, error: threadError } = await supabase
+  .from('vw_forum_threads')
+  .select('*')
+  .order('created_at', { ascending: false });
+
+// Contar los mensajes de cada hilo
+const threadIds = threads?.map(t => t.id) || [];
+let repliesCountMap: Record<string, number> = {};
+if (threadIds.length > 0) {
+  const { data: postsList } = await supabase
+    .from('forum_posts')
+    .select('thread_id')
+    .in('thread_id', threadIds);
+    
+  if (postsList) {
+    postsList.forEach(p => {
+      repliesCountMap[p.thread_id] = (repliesCountMap[p.thread_id] || 0) + 1;
+    });
+  }
+}
+
+const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : null;
+---
+
+<Layout title="Comunidad | Freedom Movement Lab">
+  <Nav />
+  
+  <main class="w-full min-h-screen bg-[#0b1016] text-white pt-24 pb-20">
+    <div class="container mx-auto px-6 max-w-5xl animate-fade-in">
+      
+      <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 class="text-4xl font-black tracking-tight mb-2 uppercase text-transparent bg-clip-text bg-gradient-to-r from-white to-[#00A3FF]">Comunidad y Foro</h1>
+          <p class="text-slate-400 font-medium">Discute sobre movimiento, comparte tu progreso y conecta con otros traceurs.</p>
+        </div>
+        <div>
+          <button id="btn-new-thread" class="btn-primary flex items-center gap-2 px-6 py-3 bg-[#00A3FF] hover:bg-[#00E5FF] text-black font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(0,163,255,0.4)]">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo Hilo
+          </button>
+        </div>
+      </header>
+
+      {errorMsg ? (
+        <div class="bg-rose-500/10 border border-rose-500/20 text-rose-400 p-6 rounded-2xl text-center">
+          {errorMsg}
+        </div>
+      ) : (
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+          
+          <!-- Categorías Sidebar -->
+          <aside class="md:col-span-1 space-y-2">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-2 mb-4">Categorías</h3>
+            <a href="/comunidad" class="block w-full text-left px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-bold transition-all hover:bg-white/10">
+              Todas las Discusiones
+            </a>
+            {categories?.map((cat) => (
+              <a href={`?category=${cat.id}`} class="block w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-medium">
+                {cat.name}
+              </a>
+            ))}
+          </aside>
+
+          <!-- Listado de Hilos -->
+          <div class="md:col-span-3 space-y-4">
+            {threads?.length === 0 ? (
+              <div class="text-center py-16 bg-[#111C2A] rounded-2xl border border-white/5">
+                <svg class="w-12 h-12 mx-auto text-slate-600 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <h3 class="text-xl font-bold text-slate-300">No hay hilos todavía</h3>
+                <p class="text-slate-500 mt-2">Sé el primero en iniciar una conversación.</p>
+              </div>
+            ) : (
+               threads?.map((thread) => {
+                 const authorName = thread.author_name || 'Usuario Anónimo';
+                 const authorAvatar = thread.author_avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=111C2A&color=00A3FF`;
+                    const dateFormatted = new Date(thread.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+                    // El conteo real de respuestas es el total de posts menos el primero (el hilo en sí)
+                    const totalPosts = repliesCountMap[thread.id] || 1;
+                    const repliesCount = Math.max(0, totalPosts - 1);
+                  const isStaff = thread.author_role === 'admin' || thread.author_role === 'instructor';
+                  const roleLabel = thread.author_role === 'admin' ? 'ADMIN' : 'TRAINER';
+                  const roleColor = thread.author_role === 'admin' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+                  
+                  return (
+                   <a href={`/comunidad/hilo/${thread.id}`} class="block bg-[#111C2A] border border-white/5 rounded-2xl p-5 hover:border-[#00A3FF]/40 hover:bg-[#152336] transition-all group shadow-lg">
+                     <div class="flex items-start gap-4">
+                       <img src={authorAvatar} alt={authorName} class="w-10 h-10 rounded-full object-cover border border-slate-700 group-hover:border-[#00A3FF]/50 transition-colors" loading="lazy" />
+                       <div class="flex-1 min-w-0">
+                         <div class="flex items-center gap-2 mb-1">
+                          <h2 class="text-lg font-bold text-white group-hover:text-[#00A3FF] transition-colors truncate">{thread.title}</h2>
+                          {isStaff && (
+                            <span class={`text-[9px] font-black px-1.5 py-0.5 rounded border ${roleColor} tracking-widest`}>
+                              {roleLabel}
+                            </span>
+                          )}
+                         </div>
+                         <div class="flex items-center gap-3 text-xs text-slate-500 font-medium">
+                           <span class={isStaff ? "text-white font-bold" : "text-slate-300"}>{authorName}</span>
+                          <span>&bull;</span>
+                          <span>{dateFormatted}</span>
+                        </div>
+                      </div>
+                      <div class="flex flex-col items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-[#0F172A] border border-white/5 text-slate-400 group-hover:text-white transition-colors">
+                        <svg class="w-4 h-4 mb-0.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                        <span class="text-xs font-bold leading-none">{repliesCount}</span>
+                      </div>
+                    </div>
+                  </a>
+                 )
+               })
+            )}
+          </div>
+
+        </div>
+      )}
+    </div>
+
+    <!-- Modal Formulario Nuevo Hilo (Oculto) -->
+    <dialog id="new-thread-modal" class="bg-[#0b1016] text-white border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-xl w-[90%] max-w-[600px] m-auto">
+      <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
+        <svg class="w-6 h-6 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        Crear Nuevo Hilo
+      </h2>
+      <form id="form-new-thread" class="space-y-5">
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Categoría</label>
+          <select id="thread-category" required class="w-full bg-[#111C2A] border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-[#00A3FF] transition-colors">
+            {categories?.map((cat) => (
+              <option value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Título del Hilo</label>
+          <input type="text" id="thread-title" required placeholder="Ej: ¿Qué zapatillas recomiendan para cemento?" class="w-full bg-[#111C2A] border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-[#00A3FF] transition-colors" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Primer Mensaje</label>
+          <textarea id="thread-content" required rows="5" placeholder="Escribe aquí tu pregunta o discusión..." class="w-full bg-[#111C2A] border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-[#00A3FF] transition-colors resize-none"></textarea>
+        </div>
+        <div id="thread-error" class="hidden text-sm font-bold text-rose-500 bg-rose-500/10 p-3 rounded flex items-center gap-2">
+           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+           <span id="thread-error-text">Error</span>
+        </div>
+        <div class="flex justify-end gap-3 mt-6 pt-4 border-t border-white/5">
+          <button type="button" id="btn-cancel-thread" class="px-5 py-2.5 rounded-lg text-slate-400 hover:text-white font-medium transition-colors">Cancelar</button>
+          <button type="submit" id="btn-submit-thread" class="px-6 py-2.5 bg-[#00A3FF] text-black font-bold rounded-lg hover:bg-[#00E5FF] transition-colors flex items-center gap-2">Publicar Hilo</button>
+        </div>
+      </form>
+    </dialog>
+  </main>
+</Layout>
+
+<script>
+  import { supabase } from '../../lib/supabase';
+
+  const btnNewThread = document.getElementById('btn-new-thread');
+  const modalNewThread = document.getElementById('new-thread-modal') as HTMLDialogElement;
+  const btnCancelThread = document.getElementById('btn-cancel-thread');
+  const formNewThread = document.getElementById('form-new-thread') as HTMLFormElement;
+  const errorBox = document.getElementById('thread-error');
+  const errorText = document.getElementById('thread-error-text');
+  const btnSubmit = document.getElementById('btn-submit-thread') as HTMLButtonElement;
+
+  btnNewThread?.addEventListener('click', async () => {
+    // Validar sesión antes de abrir
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      alert("Debes iniciar sesión para crear un hilo.");
+      window.location.href = '/login?redirect=/comunidad';
+      return;
+    }
+    
+    if (errorBox) errorBox.classList.add('hidden');
+    formNewThread.reset();
+    modalNewThread?.showModal();
+  });
+
+  btnCancelThread?.addEventListener('click', () => {
+    modalNewThread?.close();
+  });
+
+  formNewThread?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (errorBox) errorBox.classList.add('hidden');
+    btnSubmit.disabled = true;
+    const oldText = btnSubmit.innerHTML;
+    btnSubmit.innerHTML = '<span class="animate-pulse">Publicando...</span>';
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Sesión no válida");
+
+      const categoryId = (document.getElementById('thread-category') as HTMLSelectElement).value;
+      const title = (document.getElementById('thread-title') as HTMLInputElement).value;
+      const content = (document.getElementById('thread-content') as HTMLTextAreaElement).value;
+
+      // 1. Insertar Hilo
+      const { data: threadData, error: threadError } = await supabase
+        .from('forum_threads')
+        .insert({
+          category_id: categoryId,
+          title: title,
+          user_id: session.user.id
+        })
+        .select()
+        .single();
+
+      if (threadError) throw new Error(threadError.message);
+
+      // 2. Insertar Primer Post (Markdown / HTML Simple guardado como texto plano en este test básico si no se usa Tiptap aquí)
+      // Como el prompt pedía Tiptap en componentes de "Respuesta", aquí mandaremos el textarea normal envuelto en html
+      const formattedContent = `<p>${content.replace(/\\n/g, '<br/>')}</p>`;
+      
+      const { error: postError } = await supabase
+        .from('forum_posts')
+        .insert({
+          thread_id: threadData.id,
+          user_id: session.user.id,
+          content: formattedContent
+        });
+
+      if (postError) throw new Error(postError.message);
+
+      // Éxito, ir al hilo nuevo
+      window.location.href = `/comunidad/hilo/${threadData.id}`;
+
+    } catch (err: any) {
+      if (errorBox && errorText) {
+        errorBox.classList.remove('hidden');
+        errorText.textContent = err.message || "Ocurrió un error al publicar el hilo.";
+      }
+      btnSubmit.disabled = false;
+      btnSubmit.innerHTML = oldText;
+    }
+  });
+
+  // --- Realtime Subscription ---
+  const threadsContainer = document.querySelector('.md\\:col-span-3.space-y-4');
+  
+  if (threadsContainer) {
+    supabase
+      .channel('public:forum_threads')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'forum_threads' }, async (payload) => {
+        // Obtenemos los datos extendidos del hilo desde la vista (o lo simulamos para rapidez)
+        const { data: thread } = await supabase
+          .from('vw_forum_threads')
+          .select('*')
+          .eq('id', payload.new.id)
+          .single();
+        
+        if (thread) {
+          const authorName = thread.author_name || 'Usuario';
+          const authorAvatar = thread.author_avatar;
+          const dateFormatted = new Date(thread.created_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+          const isStaff = thread.author_role === 'admin' || thread.author_role === 'instructor';
+          const roleLabel = thread.author_role === 'admin' ? 'ADMIN' : 'TRAINER';
+          const roleColor = thread.author_role === 'admin' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30' : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+
+          const threadHtml = `
+            <a href="/comunidad/hilo/${thread.id}" class="block bg-[#111C2A] border border-white/5 rounded-2xl p-5 hover:border-[#00A3FF]/40 hover:bg-[#152336] transition-all group shadow-lg animate-in fade-in slide-in-from-top-4 duration-500">
+              <div class="flex items-start gap-4">
+                <div class="w-10 h-10 rounded-full overflow-hidden border border-slate-700 bg-[#111C2A] group-hover:border-[#00A3FF]/50 transition-colors flex-shrink-0">
+                  <img 
+                    src="${authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=111C2A&color=00A3FF`}" 
+                    alt="" 
+                    class="w-full h-full object-cover" 
+                    onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(authorName)}&background=111C2A&color=00A3FF';"
+                    loading="lazy" 
+                  />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 mb-1">
+                    <h2 class="text-lg font-bold text-white group-hover:text-[#00A3FF] transition-colors truncate">${thread.title}</h2>
+                    ${isStaff ? `<span class="text-[9px] font-black px-1.5 py-0.5 rounded border ${roleColor} tracking-widest">${roleLabel}</span>` : ''}
+                  </div>
+                  <div class="flex items-center gap-3 text-xs text-slate-500 font-medium">
+                    <span class="${isStaff ? 'text-white font-bold' : 'text-slate-300'}">${authorName}</span>
+                    <span>&bull;</span>
+                    <span>${dateFormatted}</span>
+                  </div>
+                </div>
+                <div class="flex flex-col items-center justify-center min-w-[3rem] px-3 py-1.5 rounded-lg bg-[#0F172A] border border-white/5 text-slate-400 group-hover:text-white transition-colors">
+                  <svg class="w-4 h-4 mb-0.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                  <span class="text-xs font-bold leading-none">0</span>
+                </div>
+              </div>
+            </a>
+          `;
+          
+          // Eliminar el mensaje de "No hay hilos" si existe
+          const noThreadsMsg = threadsContainer.querySelector('.text-center.py-16');
+          if (noThreadsMsg) noThreadsMsg.remove();
+          
+          threadsContainer.insertAdjacentHTML('afterbegin', threadHtml);
+        }
+      })
+      .subscribe();
+  }
+</script>

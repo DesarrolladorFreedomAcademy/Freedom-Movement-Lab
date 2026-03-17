@@ -1,0 +1,233 @@
+---
+/* 
+  Componente ReplyBox (Tiptap Editor + Supabase Insert)
+  Prop: threadId para saber en qué hilo se publica
+*/
+export interface Props {
+  threadId: string;
+}
+
+const { threadId } = Astro.props;
+---
+
+<div id="reply-container" class="w-full flex flex-col gap-3 group relative" data-thread-id={threadId}>
+  <!-- Editor Main Container -->
+  <!-- Barra de Herramientas del Editor (Tiptap Toolbar) -->
+  <div class="flex items-center flex-wrap gap-1 p-2 bg-[#182538] border border-white/10 rounded-t-xl border-b-0">
+    <button type="button" id="btn-bold" class="editor-btn p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Negrita">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 12a4 4 0 0 0 0-8H6v8"/><path d="M15 20a4 4 0 0 0 0-8H6v8Z"/></svg>
+    </button>
+    <button type="button" id="btn-italic" class="editor-btn p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Cursiva">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+    </button>
+    <div class="w-px h-5 bg-white/10 mx-1"></div>
+    <button type="button" id="btn-bullet-list" class="editor-btn p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Lista de puntos">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    </button>
+    <button type="button" id="btn-ordered-list" class="editor-btn p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Lista numerada">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>
+    </button>
+    <div class="w-px h-5 bg-white/10 mx-1"></div>
+    <button type="button" id="btn-link" class="editor-btn p-2 text-slate-400 hover:text-white hover:bg-white/10 rounded transition-colors" title="Añadir Enlace">
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+    </button>
+    
+    <span class="ml-auto text-[10px] text-slate-500 font-bold uppercase tracking-widest px-2 hidden md:block">Pega enlaces de Youtube</span>
+  </div>
+
+  <!-- Contenedor editable donde Tiptap montará el editor -->
+  <div id="tiptap-editor" class="bg-[#111C2A] text-white border border-white/10 rounded-b-xl focus-within:border-[#008AE6] transition-colors p-4 min-h-[150px] shadow-inner max-h-[400px] overflow-y-auto">
+    <!-- Tiptap inyectará y manejará el contenteditable aquí -->
+  </div>
+
+  <div id="reply-error" class="hidden text-sm font-bold text-rose-500 mt-2 bg-rose-500/10 p-2.5 rounded border border-rose-500/20 flex items-center gap-2">
+    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span id="reply-error-text">Error</span>
+  </div>
+
+  <div class="flex justify-end mt-2">
+    <button id="btn-submit-reply" class="btn-primary flex items-center gap-2 px-8 py-3 bg-[#00A3FF] hover:bg-[#00E5FF] text-black font-extrabold rounded-lg transition-all shadow-[0_0_15px_rgba(0,163,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed">
+      Responder
+      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+  
+  <!-- Overlay de éxito para Feedback Rápido -->
+  <div id="success-overlay" class="hidden absolute inset-0 bg-[#0F172A]/90 backdrop-blur-sm z-50 flex items-center justify-center rounded-xl border border-emerald-500/30">
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-12 h-12 bg-emerald-500 text-black rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(16,185,129,0.5)]">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <p class="text-white font-black uppercase tracking-widest text-sm">Mensaje Enviado</p>
+    </div>
+  </div>
+</div>
+
+<style is:global>
+  .ProseMirror {
+    outline: none !important;
+    min-height: 120px;
+  }
+  .ProseMirror p {
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+    color: #cbd5e1;
+  }
+  .ProseMirror a {
+    color: #00A3FF;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .ProseMirror strong {
+    color: white;
+    font-weight: 800;
+  }
+  .ProseMirror em {
+    font-style: italic;
+    color: #e2e8f0;
+  }
+  .ProseMirror ul {
+    list-style-type: disc;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .ProseMirror ol {
+    list-style-type: decimal;
+    padding-left: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .ProseMirror li p {
+    margin-bottom: 0.25rem;
+  }
+</style>
+
+<script>
+  import { Editor } from '@tiptap/core';
+  import StarterKit from '@tiptap/starter-kit';
+  import { supabase } from '../lib/supabase';
+
+  const containerEl = document.getElementById('reply-container');
+  const editorEl = document.getElementById('tiptap-editor');
+  
+  // Limpieza previa si existiera (útil en HMR)
+  if (editorEl && (editorEl as any)._tiptap) {
+    (editorEl as any)._tiptap.destroy();
+  }
+
+  if (editorEl && containerEl) {
+    const threadId = containerEl.dataset.threadId;
+
+    const editor = new Editor({
+      element: editorEl,
+      extensions: [
+        StarterKit.configure({
+          // En la versión 3.x, StarterKit puede incluir Link.
+          // Si causa conflicto, lo configuramos aquí.
+          // Si NO lo incluye, añadimos Link por separado pero con cuidado.
+          // Probamos a configurarlo directamente en StarterKit.
+          history: true,
+          bold: { HTMLAttributes: { class: 'font-bold text-white' } },
+          italic: { HTMLAttributes: { class: 'italic text-slate-200' } },
+        }),
+        // Si el warning persiste, es que StarterKit *sí* lo tiene. 
+        // Si el botón de link deja de funcionar al quitar esto, es que StarterKit *no* lo tiene.
+        // Pero el warning del usuario "Duplicate extension names found: ['link']" confirma que algo más lo está trayendo.
+      ],
+      content: '<p></p>',
+      onTransaction: () => {
+        document.getElementById('btn-bold')?.classList.toggle('text-[#00A3FF]', editor.isActive('bold'));
+        document.getElementById('btn-italic')?.classList.toggle('text-[#00A3FF]', editor.isActive('italic'));
+        document.getElementById('btn-bullet-list')?.classList.toggle('text-[#00A3FF]', editor.isActive('bulletList'));
+        document.getElementById('btn-ordered-list')?.classList.toggle('text-[#00A3FF]', editor.isActive('orderedList'));
+        document.getElementById('btn-link')?.classList.toggle('text-[#00A3FF]', editor.isActive('link'));
+      }
+    });
+
+    // Guardar referencia para limpieza en el elemento DOM
+    (editorEl as any)._tiptap = editor;
+
+    // Event Listeners Toolbar
+    document.getElementById('btn-bold')?.addEventListener('click', () => editor.chain().focus().toggleBold().run());
+    document.getElementById('btn-italic')?.addEventListener('click', () => editor.chain().focus().toggleItalic().run());
+    document.getElementById('btn-bullet-list')?.addEventListener('click', () => editor.chain().focus().toggleBulletList().run());
+    document.getElementById('btn-ordered-list')?.addEventListener('click', () => editor.chain().focus().toggleOrderedList().run());
+    document.getElementById('btn-link')?.addEventListener('click', () => {
+      const previousUrl = editor.getAttributes('link').href;
+      const url = window.prompt('URL del Enlace:', previousUrl);
+      if (url === null) return;
+      if (url === '') {
+        editor.chain().focus().extendMarkRange('link').unsetLink().run();
+        return;
+      }
+      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    });
+
+    // Subida a Supabase
+    const btnSubmit = document.getElementById('btn-submit-reply') as HTMLButtonElement;
+    const errorBox = document.getElementById('reply-error');
+    const errorText = document.getElementById('reply-error-text');
+    const successOverlay = document.getElementById('success-overlay');
+
+    btnSubmit?.addEventListener('click', async () => {
+      const htmlContent = editor.getHTML();
+      if (htmlContent === '<p></p>' || editor.getText().trim() === '') {
+        if (errorBox && errorText) {
+          errorText.textContent = 'El mensaje no puede estar vacío.';
+          errorBox.classList.remove('hidden');
+        }
+        return;
+      }
+
+      if (errorBox) errorBox.classList.add('hidden');
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span class="animate-spin mr-2">◌</span> Enviando...';
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          throw new Error('Debes iniciar sesión para publicar una respuesta.');
+        }
+
+        const { error: insertError } = await supabase
+          .from('forum_posts')
+          .insert({
+            thread_id: threadId,
+            user_id: session.user.id,
+            content: htmlContent
+          });
+
+        if (insertError) throw new Error(insertError.message);
+
+        // Feedback visual rápido
+        if (successOverlay) {
+          successOverlay.classList.remove('hidden');
+          successOverlay.classList.add('flex');
+        }
+
+        // Limpiar editor
+        editor.commands.setContent('<p></p>');
+
+        // Recargar tras breve delay para que se vea el éxito
+        setTimeout(() => {
+          window.location.reload();
+        }, 800);
+
+      } catch (err: any) {
+        if (errorBox && errorText) {
+          errorText.textContent = err.message || 'Error al intentar enviar la respuesta.';
+          errorBox.classList.remove('hidden');
+        }
+        
+        if (err.message.includes('iniciar sesión')) {
+             setTimeout(() => {
+                 window.location.href = `/login?redirect=/comunidad/hilo/${threadId}`;
+             }, 2000);
+        }
+
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = `Responder <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
+      }
+    });
+  }
+</script>

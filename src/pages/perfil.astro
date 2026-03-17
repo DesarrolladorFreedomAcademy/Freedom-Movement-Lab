@@ -536,9 +536,9 @@ const PROGRESO_HABILIDADES = [
     <div class="container mx-auto px-8 py-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 font-medium">
       <p>© 2026 Freedom movement lab. Rompe los límites.</p>
       <div class="flex gap-6 mt-4 md:mt-0">
-        <a href="#" class="hover:text-white transition-colors">Privacidad</a>
-        <a href="#" class="hover:text-white transition-colors">Términos</a>
-        <a href="#" class="hover:text-white transition-colors">Soporte</a>
+        <a href="/privacidad" class="hover:text-white transition-colors">Privacidad</a>
+        <a href="/terminos" class="hover:text-white transition-colors">Términos</a>
+        <a href="mailto:soporte@freedomacademygym.com" class="hover:text-white transition-colors">Soporte</a>
       </div>
     </div>
   </footer>
@@ -801,23 +801,40 @@ const PROGRESO_HABILIDADES = [
           }
 
           btnSave.textContent = 'Guardando datos...';
-          const { error } = await supabase.auth.updateUser({
+          
+          // 1. Actualizar metadatos de Autenticación
+          const { error: authError } = await supabase.auth.updateUser({
             data: { 
               full_name: updName,
               avatar_url: finalAvatarUrl 
             }
           });
 
-          if (error) {
+          if (authError) {
              if (errBox) {
                errBox.classList.remove('hidden');
-               errBox.textContent = 'Hubo un error al actualizar tu perfil: ' + error.message;
+               errBox.textContent = 'Error en Auth: ' + authError.message;
              }
              btnSave.disabled = false;
              btnSave.textContent = 'Guardar';
-          } else {
-             window.location.reload(); 
+             return;
           }
+
+          // 2. Sincronizar con la tabla pública "perfiles" (indispensable para el foro/comunidad)
+          const { error: profileError } = await supabase
+            .from('perfiles')
+            .update({
+              nombre: updName,
+              avatar_url: finalAvatarUrl
+            })
+            .eq('id', session.user.id);
+
+          if (profileError) {
+             console.error('Error sincronizando tabla perfiles:', profileError);
+             // No bloqueamos el reload si auth funcionó, pero avisamos en consola
+          }
+
+          window.location.reload(); 
         });
       }
       // --------------------------------------------------------
