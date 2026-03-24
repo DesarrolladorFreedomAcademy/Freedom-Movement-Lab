@@ -117,3 +117,17 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+/* Leaflet Global Z-Index Fix (Avoid overlapping Nav z-50) */
+.leaflet-container {
+  z-index: 1 !important;
+}
+.leaflet-pane {
+  z-index: 1 !important;
+}
+.leaflet-top, .leaflet-bottom {
+  z-index: 2 !important;
+}
+.leaflet-control {
+  z-index: 3 !important;
+}

@@ -5,12 +5,13 @@
 */
 export interface Props {
   threadId: string;
+  isQuedada?: boolean;
 }
 
-const { threadId } = Astro.props;
+const { threadId, isQuedada = false } = Astro.props;
 ---
 
-<div id="reply-container" class="w-full flex flex-col gap-3 group relative" data-thread-id={threadId}>
+<div id="reply-container" class="w-full flex flex-col gap-3 group relative" data-thread-id={threadId} data-is-quedada={isQuedada ? 'true' : 'false'}>
   <!-- Editor Main Container -->
   <!-- Barra de Herramientas del Editor (Tiptap Toolbar) -->
   <div class="flex items-center flex-wrap gap-1 p-2 bg-[#182538] border border-white/10 rounded-t-xl border-b-0">
@@ -44,6 +45,36 @@ const { threadId } = Astro.props;
     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
     <span id="reply-error-text">Error</span>
   </div>
+
+  {isQuedada && (
+    <div class="mt-2 text-white">
+      <button type="button" id="btn-toggle-map" class="flex items-center gap-2 px-4 py-2 bg-[#182538] hover:bg-[#203047] text-[#00A3FF] text-sm font-bold rounded-lg transition-colors border border-white/5 w-fit mb-3">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        Añadir Ubicación (Opcional)
+      </button>
+
+      <div id="reply-location-section" class="hidden flex flex-col gap-3 pb-2 border-b border-white/5">
+        <div class="relative flex flex-col gap-1 w-full">
+          <div class="flex gap-2 w-full">
+            <input type="text" id="reply-map-search-input" placeholder="Buscar dirección o ciudad..." autocomplete="off" class="flex-1 bg-[#111C2A] border border-slate-700 text-white p-2.5 rounded-lg text-sm focus:outline-none focus:border-[#00A3FF] transition-colors" />
+            <button type="button" id="btn-reply-map-search" class="px-3 md:px-4 py-2 bg-slate-800 hover:bg-[#00A3FF] text-white hover:text-black text-sm font-bold rounded-lg transition-colors border border-white/5">Buscar</button>
+          </div>
+          <ul id="reply-map-search-results" class="hidden absolute top-[46px] left-0 w-full md:w-[calc(100%-80px)] bg-[#182538] border border-white/10 rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto divide-y divide-white/5 text-sm"></ul>
+        </div>
+        <div id="reply-map-container" class="w-full h-48 rounded-xl border border-white/10 z-10 relative overflow-hidden bg-[#111C2A]"></div>
+        <div class="flex items-center justify-between">
+          <button type="button" id="btn-reply-use-my-location" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-lg transition-colors">
+            <svg class="w-3.5 h-3.5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+            Mi ubicación actual
+          </button>
+          <p id="reply-location-status" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider text-right line-clamp-1 max-w-[50%]"></p>
+        </div>
+        <input type="hidden" id="reply-location-lat" value="" />
+        <input type="hidden" id="reply-location-lng" value="" />
+        <input type="hidden" id="reply-location-address" value="" />
+      </div>
+    </div>
+  )}
 
   <div class="flex justify-end mt-2">
     <button id="btn-submit-reply" class="btn-primary flex items-center gap-2 px-8 py-3 bg-[#00A3FF] hover:bg-[#00E5FF] text-black font-extrabold rounded-lg transition-all shadow-[0_0_15px_rgba(0,163,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed">
@@ -189,13 +220,26 @@ const { threadId } = Astro.props;
           throw new Error('Debes iniciar sesión para publicar una respuesta.');
         }
 
+        const postPayload: any = {
+          thread_id: threadId,
+          user_id: session.user.id,
+          content: htmlContent
+        };
+
+        const isQuedada = containerEl?.dataset.isQuedada === 'true';
+        const replyLatInput = document.getElementById('reply-location-lat') as HTMLInputElement;
+        const replyLngInput = document.getElementById('reply-location-lng') as HTMLInputElement;
+        const replyAddressInput = document.getElementById('reply-location-address') as HTMLInputElement;
+
+        if (isQuedada && replyLatInput?.value && replyLngInput?.value) {
+          postPayload.location_lat = parseFloat(replyLatInput.value);
+          postPayload.location_lng = parseFloat(replyLngInput.value);
+          postPayload.location_address = replyAddressInput?.value || null;
+        }
+
         const { error: insertError } = await supabase
           .from('forum_posts')
-          .insert({
-            thread_id: threadId,
-            user_id: session.user.id,
-            content: htmlContent
-          });
+          .insert(postPayload);
 
         if (insertError) throw new Error(insertError.message);
 
@@ -229,5 +273,147 @@ const { threadId } = Astro.props;
         btnSubmit.innerHTML = `Responder <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>`;
       }
     });
+
+    // --- Map logic for replies ---
+    const isQuedada = containerEl?.dataset.isQuedada === 'true';
+    if (isQuedada) {
+      const btnToggleMap = document.getElementById('btn-toggle-map');
+      const replyLocationSection = document.getElementById('reply-location-section');
+      const replyLatInput = document.getElementById('reply-location-lat') as HTMLInputElement;
+      const replyLngInput = document.getElementById('reply-location-lng') as HTMLInputElement;
+      const replyAddressInput = document.getElementById('reply-location-address') as HTMLInputElement;
+      const replyMapSearchInput = document.getElementById('reply-map-search-input') as HTMLInputElement;
+      const btnReplyMapSearch = document.getElementById('btn-reply-map-search');
+      const btnReplyUseMyLocation = document.getElementById('btn-reply-use-my-location');
+      const replyLocationStatus = document.getElementById('reply-location-status');
+
+      let replyMapInstance: any = null;
+      let replyMarker: any = null;
+
+      function initReplyMap() {
+        if (replyMapInstance) {
+          setTimeout(() => replyMapInstance.invalidateSize(), 100);
+          return;
+        }
+        replyMapInstance = (window as any).L.map('reply-map-container').setView([40.4168, -3.7038], 5);
+        (window as any).L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(replyMapInstance);
+
+        replyMapInstance.on('click', async (e: any) => {
+          setReplyMapMarker(e.latlng.lat, e.latlng.lng, undefined, true);
+        });
+        setTimeout(() => replyMapInstance.invalidateSize(), 100);
+      }
+
+      async function setReplyMapMarker(lat: number, lng: number, addressArg?: string, isManualClick = false) {
+        if (replyMarker) replyMapInstance.removeLayer(replyMarker);
+        replyMarker = (window as any).L.marker([lat, lng]).addTo(replyMapInstance);
+        
+        if (!isManualClick) {
+          replyMapInstance.setView([lat, lng], 15);
+        }
+        
+        if (replyLatInput) replyLatInput.value = lat.toString();
+        if (replyLngInput) replyLngInput.value = lng.toString();
+
+        if (replyLocationStatus) replyLocationStatus.textContent = 'Buscando dirección...';
+
+        try {
+          if (addressArg) {
+            if (replyAddressInput) replyAddressInput.value = addressArg;
+          } else {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+            const data = await res.json();
+            if (replyAddressInput) replyAddressInput.value = data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          }
+          if (replyLocationStatus) replyLocationStatus.textContent = replyAddressInput?.value.substring(0, 40) + '...';
+        } catch (e) {
+          if (replyAddressInput) replyAddressInput.value = `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+          if (replyLocationStatus) replyLocationStatus.textContent = 'Ubicación seleccionada';
+        }
+      }
+
+      btnToggleMap?.addEventListener('click', () => {
+        replyLocationSection?.classList.toggle('hidden');
+        if (!replyLocationSection?.classList.contains('hidden')) {
+          initReplyMap();
+        } else {
+          // Clear location if hidden
+          if (replyLatInput) replyLatInput.value = '';
+          if (replyLngInput) replyLngInput.value = '';
+          if (replyAddressInput) replyAddressInput.value = '';
+          if (replyLocationStatus) replyLocationStatus.textContent = '';
+        }
+      });
+
+      btnReplyUseMyLocation?.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          alert("La geolocalización no es soportada por tu navegador.");
+          return;
+        }
+        if (replyLocationStatus) replyLocationStatus.textContent = 'Obteniendo...';
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            setReplyMapMarker(position.coords.latitude, position.coords.longitude);
+          },
+          (error) => {
+            alert("Error al obtener la ubicación. Verifica los permisos de tu navegador.");
+            if (replyLocationStatus) replyLocationStatus.textContent = '';
+          }
+        );
+      });
+
+      btnReplyMapSearch?.addEventListener('click', async () => {
+        const query = replyMapSearchInput?.value.trim();
+        if (!query) return;
+        
+        const replyMapSearchResults = document.getElementById('reply-map-search-results');
+        if (replyLocationStatus) replyLocationStatus.textContent = 'Buscando...';
+        if (replyMapSearchResults) {
+          replyMapSearchResults.innerHTML = '';
+          replyMapSearchResults.classList.add('hidden');
+        }
+
+        try {
+          const res = await fetch(`https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?singleLine=${encodeURIComponent(query)}&f=pjson&maxLocations=5`);
+          const data = await res.json();
+          if (data && data.candidates && data.candidates.length > 0) {
+            if (data.candidates.length === 1) {
+              const candidate = data.candidates[0];
+              setReplyMapMarker(candidate.location.y, candidate.location.x, candidate.address || query);
+            } else {
+              if (replyLocationStatus) replyLocationStatus.textContent = `Selecciona...`;
+              if (replyMapSearchResults) {
+                data.candidates.forEach((c: any) => {
+                  const li = document.createElement('li');
+                  li.className = 'px-3 py-2.5 hover:bg-white/5 cursor-pointer text-slate-200 transition-colors flex items-center gap-2';
+                  li.innerHTML = `<svg class="w-4 h-4 text-[#00A3FF] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg><span class="truncate">${c.address}</span>`;
+                  li.addEventListener('click', () => {
+                    setReplyMapMarker(c.location.y, c.location.x, c.address || query);
+                    replyMapSearchResults.classList.add('hidden');
+                  });
+                  replyMapSearchResults.appendChild(li);
+                });
+                replyMapSearchResults.classList.remove('hidden');
+              }
+            }
+          } else {
+            alert("Ubicación no encontrada. Prueba a detallar más la dirección (ej. Calle, Número, Ciudad).");
+            if (replyLocationStatus) replyLocationStatus.textContent = '';
+          }
+        } catch(e) {
+          alert("Error al buscar ubicación.");
+          if (replyLocationStatus) replyLocationStatus.textContent = '';
+        }
+      });
+      
+      // Ocultar dropdown al hacer click fuera
+      document.addEventListener('click', (e) => {
+        const replyMapSearchResults = document.getElementById('reply-map-search-results');
+        if (replyMapSearchResults && !replyMapSearchResults.contains(e.target as Node) && e.target !== replyMapSearchInput && e.target !== btnReplyMapSearch) {
+          replyMapSearchResults.classList.add('hidden');
+        }
+      });
+    }
+
   }
 </script>

@@ -12,11 +12,19 @@ const { data: categories, error: catError } = await supabase
   .select('*')
   .order('created_at', { ascending: true });
 
-// Obtener los hilos recientes con datos del perfil del autor desde la vista
-const { data: threads, error: threadError } = await supabase
+// Obtener los hilos recientes (filtrar por categoría si está en URL)
+const categoryId = Astro.url.searchParams.get('category');
+
+let query = supabase
   .from('vw_forum_threads')
   .select('*')
   .order('created_at', { ascending: false });
+
+if (categoryId) {
+  query = query.eq('category_id', categoryId);
+}
+
+const { data: threads, error: threadError } = await query;
 
 // Contar los mensajes de cada hilo
 const threadIds = threads?.map(t => t.id) || [];
@@ -38,6 +46,9 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
 ---
 
 <Layout title="Comunidad | Freedom Movement Lab">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script is:inline src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
   <Nav />
   
   <main class="w-full min-h-screen bg-[#0b1016] text-white pt-24 pb-20">
@@ -48,7 +59,11 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
           <h1 class="text-4xl font-black tracking-tight mb-2 uppercase text-transparent bg-clip-text bg-gradient-to-r from-white to-[#00A3FF]">Comunidad y Foro</h1>
           <p class="text-slate-400 font-medium">Discute sobre movimiento, comparte tu progreso y conecta con otros traceurs.</p>
         </div>
-        <div>
+        <div class="flex items-center gap-3">
+          <a id="btn-admin-panel" href="/comunidad/configuracion" class="hidden items-center gap-2 px-6 py-3 bg-[#111C2A] hover:bg-[#152336] text-white border border-white/10 font-bold rounded-lg transition-all shadow-lg">
+            <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="hidden md:inline">Configuración</span>
+          </a>
           <button id="btn-new-thread" class="btn-primary flex items-center gap-2 px-6 py-3 bg-[#00A3FF] hover:bg-[#00E5FF] text-black font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(0,163,255,0.4)]">
             <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             Nuevo Hilo
@@ -64,16 +79,41 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
         <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
           
           <!-- Categorías Sidebar -->
-          <aside class="md:col-span-1 space-y-2">
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest pl-2 mb-4">Categorías</h3>
-            <a href="/comunidad" class="block w-full text-left px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white font-bold transition-all hover:bg-white/10">
-              Todas las Discusiones
-            </a>
-            {categories?.map((cat) => (
-              <a href={`?category=${cat.id}`} class="block w-full text-left px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-medium">
-                {cat.name}
+          <aside class="md:col-span-1 mb-6 md:mb-0">
+            <h3 class="hidden md:block text-xs font-bold text-slate-500 uppercase tracking-widest pl-2 mb-4">Categorías</h3>
+            
+            <!-- Versión Desktop -->
+            <div id="sidebar-categories" class="hidden md:flex flex-col space-y-2">
+              <a href="/comunidad" class={`block w-full text-left px-4 py-3 rounded-xl transition-all ${!categoryId ? 'bg-white/5 border border-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5 font-medium'}`}>
+                Todas las Discusiones
               </a>
-            ))}
+              {categories?.map((cat) => {
+                const isActive = cat.id === categoryId;
+                return (
+                  <a href={`?category=${cat.id}`} class={`block w-full text-left px-4 py-3 rounded-xl transition-all ${isActive ? 'bg-white/5 border border-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5 font-medium'}`}>
+                    {cat.name}
+                  </a>
+                );
+              })}
+            </div>
+
+            <!-- Versión Mobile (Select Dropdown) -->
+            <div class="md:hidden relative w-full">
+              <select id="mobile-category-dropdown" class="w-full appearance-none bg-[#111C2A] border border-white/10 text-white font-bold px-4 py-3.5 rounded-xl focus:outline-none focus:border-[#00A3FF] outline-none transition-colors shadow-lg">
+                <option value="" selected={!categoryId}>Todas las Discusiones</option>
+                {categories?.map((cat) => (
+                  <option value={cat.id} selected={cat.id === categoryId}>{cat.name}</option>
+                ))}
+              </select>
+              <svg class="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            </div>
+            
+            <script>
+              document.getElementById('mobile-category-dropdown')?.addEventListener('change', (e) => {
+                const val = (e.target as HTMLSelectElement).value;
+                window.location.href = val ? `/comunidad?category=${val}` : '/comunidad';
+              });
+            </script>
           </aside>
 
           <!-- Listado de Hilos -->
@@ -130,6 +170,88 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
       )}
     </div>
 
+    <!-- Footer local de la Comunidad -->
+    <footer class="mt-20 border-t border-white/5 pt-8 pb-4 text-center">
+      <button id="btn-show-rules" class="text-xs font-bold text-slate-500 hover:text-white transition-colors underline decoration-white/10 hover:decoration-white/30 underline-offset-4 uppercase tracking-widest">Normas de la Comunidad</button>
+    </footer>
+
+    <!-- Modal Normas del Foro -->
+    <dialog id="rules-modal" class="bg-[#0b1016] text-white md:border border-white/10 md:rounded-2xl shadow-2xl w-[100vw] h-[100dvh] max-w-none max-h-none md:w-[95%] md:max-w-[700px] md:h-auto md:max-h-[85vh] m-0 md:m-auto p-0 outline-none backdrop:bg-[#0b1016]/80 backdrop:backdrop-blur-sm">
+      <div class="flex flex-col h-full overflow-hidden w-full">
+      <!-- Sticky Header -->
+      <div class="px-6 md:px-8 py-5 border-b border-white/5 bg-[#0b1016]/95 sticky top-0 z-10 flex items-center justify-between shrink-0">
+        <h2 class="text-lg md:text-xl font-black uppercase tracking-widest text-[#00A3FF] flex items-center gap-2 md:gap-3">
+          <svg class="w-5 h-5 md:w-6 md:h-6 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          Normas de la Comunidad
+        </h2>
+      </div>
+      
+      <!-- Scrollable Content -->
+      <div class="flex-1 min-h-0 px-6 md:px-8 py-6 overflow-y-auto space-y-8 text-slate-300 text-sm md:text-base leading-relaxed">
+        
+        <div>
+          <p class="text-base md:text-lg text-white font-bold mb-2">¡Te damos la bienvenida a la comunidad de Freedom Movement Lab!</p>
+          <p>Nuestra misión es crear un espacio seguro, inspirador y colaborativo donde todos puedan explorar, aprender y compartir libremente. Para mantener un ambiente sano y enriquecedor para todos los miembros, te pedimos que leas y respetes las siguientes normas. Al participar en nuestra comunidad, aceptas cumplir con estas directrices.</p>
+        </div>
+
+        <section class="space-y-4">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="text-xl">🌟</span> 1. Nuestros Valores Principales</h3>
+          <ul class="space-y-3 pl-2">
+            <li><strong class="text-emerald-400 block mb-0.5">Fomenta el respeto mutuo:</strong> Trata a todos los miembros con cortesía y empatía. Valoramos la diversidad de opiniones, orígenes y niveles de experiencia.</li>
+            <li><strong class="text-emerald-400 block mb-0.5">Aporta valor:</strong> Comparte ideas, recursos, experiencias y críticas constructivas. Si no estás de acuerdo con alguien, debate la idea, no ataques a la persona.</li>
+            <li><strong class="text-emerald-400 block mb-0.5">Celebra la inclusión:</strong> Este es un espacio libre de discriminación. Todas las personas son bienvenidas independientemente de su raza, género, orientación sexual, religión, edad o capacidades.</li>
+            <li><strong class="text-emerald-400 block mb-0.5">Mantén la mente abierta:</strong> Estamos en un "laboratorio". La experimentación, las preguntas y el aprendizaje continuo son el núcleo de nuestra comunidad.</li>
+          </ul>
+        </section>
+
+        <section class="space-y-4">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="text-xl">🚫</span> 2. Comportamientos No Permitidos</h3>
+          <p class="text-slate-400">Para garantizar la seguridad de todos, los siguientes comportamientos están estrictamente prohibidos:</p>
+          <ul class="space-y-3 pl-2">
+            <li><strong class="text-rose-400 block mb-0.5">Acoso y Bullying:</strong> No se tolerará la intimidación, el acoso, las amenazas ni los ataques personales de ningún tipo.</li>
+            <li><strong class="text-rose-400 block mb-0.5">Discurso de Odio y Discriminación:</strong> Está prohibido cualquier lenguaje o contenido que promueva la violencia, denigre o ataque a personas o grupos por su identidad.</li>
+            <li><strong class="text-rose-400 block mb-0.5">Spam y Autopromoción Excesiva:</strong> No utilices la comunidad únicamente para vender productos, publicar enlaces de referidos o hacer publicidad engañosa. (Si tienes un proyecto relevante, compártelo en el canal/sección adecuado).</li>
+            <li><strong class="text-rose-400 block mb-0.5">Contenido Inapropiado:</strong> No publiques material pornográfico, explícito, violento o ilegal.</li>
+            <li><strong class="text-rose-400 block mb-0.5">Desinformación Malintencionada:</strong> Evita difundir noticias falsas o información deliberadamente engañosa que pueda causar daño a otros miembros.</li>
+          </ul>
+        </section>
+
+        <section class="space-y-4">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="text-xl">🔒</span> 3. Privacidad y Propiedad Intelectual</h3>
+          <ul class="space-y-3 pl-2">
+            <li><strong class="text-[#00A3FF] block mb-0.5">Respeta la privacidad:</strong> No compartas información personal (tuya o de terceros), como direcciones físicas, números de teléfono o correos electrónicos privados, de forma pública.</li>
+            <li><strong class="text-[#00A3FF] block mb-0.5">Da crédito al creador:</strong> Si compartes contenido, ideas, arte o proyectos de otras personas, asegúrate de dar el crédito correspondiente y respetar los derechos de autor. No hagas pasar el trabajo de otros como propio.</li>
+          </ul>
+        </section>
+
+        <section class="space-y-4">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="text-xl">⚖️</span> 4. Moderación y Consecuencias</h3>
+          <p class="text-slate-400">Nuestro equipo de moderación se reserva el derecho de tomar medidas para proteger la integridad de Freedom Movement Lab. Si se incumplen estas normas, las acciones pueden incluir:</p>
+          <ul class="space-y-3 pl-2">
+            <li><strong class="text-white block mb-0.5">Eliminación del contenido:</strong> Borrado de publicaciones o comentarios que infrinjan las reglas.</li>
+            <li><strong class="text-amber-400 block mb-0.5">Advertencia formal:</strong> Un aviso directo al usuario para corregir su comportamiento.</li>
+            <li><strong class="text-orange-400 block mb-0.5">Suspensión temporal:</strong> Bloqueo temporal del acceso a la comunidad.</li>
+            <li><strong class="text-rose-500 block mb-0.5">Expulsión definitiva (Ban):</strong> En casos graves o de reincidencia, la cuenta será bloqueada permanentemente.</li>
+          </ul>
+        </section>
+
+        <section class="space-y-4 pt-4 border-t border-white/5">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2"><span class="text-xl">🚩</span> 5. Cómo Reportar Infracciones</h3>
+          <p>La comunidad la construimos entre todos. Si ves un comportamiento, comentario o publicación que viola estas normas o te hace sentir incómodo, por favor, repórtalo inmediatamente. Trataremos todos los reportes de forma confidencial.</p>
+          <div class="mt-6 p-4 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-400 italic">
+            <strong>Nota:</strong> Freedom Movement Lab se reserva el derecho de actualizar o modificar estas normas en cualquier momento para adaptarnos a las necesidades de la comunidad. Te notificaremos sobre cambios importantes.
+          </div>
+        </section>
+
+      </div>
+      
+      <!-- Sticky Footer -->
+      <div class="px-6 md:px-8 pt-4 pb-12 md:py-5 border-t border-white/5 bg-[#0b1016]/95 sticky bottom-0 z-10 flex justify-end shrink-0">
+        <button id="btn-close-rules" type="button" class="px-6 md:px-8 py-3 md:py-3 bg-[#00A3FF] hover:bg-[#00E5FF] text-black font-bold rounded-xl transition-all shadow-[0_0_15px_rgba(0,163,255,0.4)]">Entendido, acepto las normas</button>
+      </div>
+      </div>
+    </dialog>
+
     <!-- Modal Formulario Nuevo Hilo (Oculto) -->
     <dialog id="new-thread-modal" class="bg-[#0b1016] text-white border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-xl w-[90%] max-w-[600px] m-auto">
       <h2 class="text-2xl font-bold mb-6 flex items-center gap-2">
@@ -141,7 +263,7 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
           <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Categoría</label>
           <select id="thread-category" required class="w-full bg-[#111C2A] border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-[#00A3FF] transition-colors">
             {categories?.map((cat) => (
-              <option value={cat.id}>{cat.name}</option>
+              <option value={cat.id} data-name={cat.name.toLowerCase()}>{cat.name}</option>
             ))}
           </select>
         </div>
@@ -152,6 +274,30 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
         <div>
           <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Primer Mensaje</label>
           <textarea id="thread-content" required rows="5" placeholder="Escribe aquí tu pregunta o discusión..." class="w-full bg-[#111C2A] border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-[#00A3FF] transition-colors resize-none"></textarea>
+        </div>
+
+        <!-- Sección de Ubicación Oculta (para Quedadas) -->
+        <div id="quedada-location-section" class="hidden flex flex-col gap-3 pb-2 border-b border-white/5">
+          <label class="block text-xs font-bold uppercase text-[#00A3FF]">Ubicación de la Quedada (Opcional)</label>
+          <div class="relative flex flex-col gap-1 w-full">
+            <div class="flex gap-2 w-full">
+              <input type="text" id="map-search-input" placeholder="Buscar dirección o ciudad..." autocomplete="off" class="flex-1 bg-[#111C2A] border border-slate-700 text-white p-2.5 rounded-lg text-sm focus:outline-none focus:border-[#00A3FF] transition-colors" />
+              <button type="button" id="btn-map-search" class="px-3 md:px-4 py-2 bg-slate-800 hover:bg-[#00A3FF] text-white hover:text-black text-sm font-bold rounded-lg transition-colors border border-white/5">Buscar</button>
+            </div>
+            <ul id="map-search-results" class="hidden absolute top-[46px] left-0 w-full md:w-[calc(100%-80px)] bg-[#182538] border border-white/10 rounded-lg shadow-2xl z-50 max-h-48 overflow-y-auto divide-y divide-white/5 text-sm"></ul>
+          </div>
+          <div id="quedada-map-container" class="w-full h-48 rounded-xl border border-white/10 z-10 relative overflow-hidden bg-[#111C2A]"></div>
+          <div class="flex items-center justify-between">
+            <button type="button" id="btn-use-my-location" class="flex items-center gap-2 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-white text-xs font-bold rounded-lg transition-colors">
+              <svg class="w-3.5 h-3.5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+              Usar mi ubicación actual
+            </button>
+            <p id="location-status" class="text-[10px] text-slate-500 font-bold uppercase tracking-wider text-right line-clamp-1 max-w-[50%]"></p>
+          </div>
+          <!-- Inputs ocultos para envío -->
+          <input type="hidden" id="location-lat" value="" />
+          <input type="hidden" id="location-lng" value="" />
+          <input type="hidden" id="location-address" value="" />
         </div>
         <div id="thread-error" class="hidden text-sm font-bold text-rose-500 bg-rose-500/10 p-3 rounded flex items-center gap-2">
            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -173,6 +319,32 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
   const modalNewThread = document.getElementById('new-thread-modal') as HTMLDialogElement;
   const btnCancelThread = document.getElementById('btn-cancel-thread');
   const formNewThread = document.getElementById('form-new-thread') as HTMLFormElement;
+  
+  // Logic for Rules Modal
+  const rulesModal = document.getElementById('rules-modal') as HTMLDialogElement;
+  const btnShowRules = document.getElementById('btn-show-rules');
+  const btnCloseRules = document.getElementById('btn-close-rules');
+  
+  if (btnShowRules && rulesModal) {
+    btnShowRules.addEventListener('click', () => rulesModal.showModal());
+  }
+
+  const actCloseRules = () => {
+    rulesModal.close();
+    localStorage.setItem('fml_forum_rules_accepted', 'true');
+  };
+
+  if (btnCloseRules && rulesModal) {
+    btnCloseRules.addEventListener('click', actCloseRules);
+  }
+
+  // Auto-open if first time
+  if (rulesModal && typeof window !== 'undefined' && !localStorage.getItem('fml_forum_rules_accepted')) {
+    setTimeout(() => {
+      rulesModal.showModal();
+    }, 500);
+  }
+
   const errorBox = document.getElementById('thread-error');
   const errorText = document.getElementById('thread-error-text');
   const btnSubmit = document.getElementById('btn-submit-thread') as HTMLButtonElement;
@@ -227,13 +399,25 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
       // Como el prompt pedía Tiptap en componentes de "Respuesta", aquí mandaremos el textarea normal envuelto en html
       const formattedContent = `<p>${content.replace(/\\n/g, '<br/>')}</p>`;
       
+      const postPayload: any = {
+        thread_id: threadData.id,
+        user_id: session.user.id,
+        content: formattedContent
+      };
+
+      const latInput = document.getElementById('location-lat') as HTMLInputElement;
+      const lngInput = document.getElementById('location-lng') as HTMLInputElement;
+      const addressInput = document.getElementById('location-address') as HTMLInputElement;
+
+      if (latInput?.value && lngInput?.value) {
+        postPayload.location_lat = parseFloat(latInput.value);
+        postPayload.location_lng = parseFloat(lngInput.value);
+        postPayload.location_address = addressInput?.value || null;
+      }
+      
       const { error: postError } = await supabase
         .from('forum_posts')
-        .insert({
-          thread_id: threadData.id,
-          user_id: session.user.id,
-          content: formattedContent
-        });
+        .insert(postPayload);
 
       if (postError) throw new Error(postError.message);
 
@@ -257,6 +441,10 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
     supabase
       .channel('public:forum_threads')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'forum_threads' }, async (payload) => {
+        // Filter by category if one is selected
+        const currentCategoryId = new URLSearchParams(window.location.search).get('category');
+        if (currentCategoryId && payload.new.category_id !== currentCategoryId) return;
+
         // Obtenemos los datos extendidos del hilo desde la vista (o lo simulamos para rapidez)
         const { data: thread } = await supabase
           .from('vw_forum_threads')
@@ -311,5 +499,208 @@ const errorMsg = catError || threadError ? "Hubo un error cargando el foro." : n
         }
       })
       .subscribe();
+      
+    // --- Realtime Categories Subscription ---
+    supabase
+      .channel('public:forum_categories')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'forum_categories' }, async () => {
+        const { data: newCats } = await supabase.from('forum_categories').select('*').order('created_at', { ascending: true });
+        if (!newCats) return;
+        
+        const sidebar = document.getElementById('sidebar-categories');
+        const currentCategoryId = new URLSearchParams(window.location.search).get('category');
+
+        if (sidebar) {
+          sidebar.innerHTML = `
+            <a href="/comunidad" class="block w-full text-left px-4 py-3 rounded-xl transition-all ${!currentCategoryId ? 'bg-white/5 border border-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5 font-medium'}">
+              Todas las Discusiones
+            </a>
+            ${newCats.map(cat => {
+              const isActive = cat.id === currentCategoryId;
+              return `<a href="?category=${cat.id}" class="block w-full text-left px-4 py-3 rounded-xl transition-all ${isActive ? 'bg-white/5 border border-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5 font-medium'}">
+                ${cat.name}
+              </a>`;
+            }).join('')}
+          `;
+        }
+
+        const selectCat = document.getElementById('thread-category');
+        if (selectCat) {
+          const currentVal = (selectCat as HTMLSelectElement).value;
+          selectCat.innerHTML = newCats.map(cat => `
+            <option value="${cat.id}">${cat.name}</option>
+          `).join('');
+          (selectCat as HTMLSelectElement).value = currentVal;
+        }
+      })
+      .subscribe();
   }
+
+  // --- Verificar acceso de Configuración ---
+  async function setupConfigButton() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    try {
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('rol')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      if (perfil?.rol === 'admin' || perfil?.rol === 'instructor') {
+        const btnAdmin = document.getElementById('btn-admin-panel');
+        if (btnAdmin) {
+          btnAdmin.classList.remove('hidden');
+          btnAdmin.classList.add('flex');
+        }
+      }
+    } catch (e) {
+      console.error('Error al verificar rol', e);
+    }
+  }
+  setupConfigButton();
+
+  // --- Map & Quedadas Logic ---
+  const categorySelect = document.getElementById('thread-category') as HTMLSelectElement;
+  const quedadoSection = document.getElementById('quedada-location-section');
+  const mapSearchInput = document.getElementById('map-search-input') as HTMLInputElement;
+  const btnMapSearch = document.getElementById('btn-map-search');
+  const btnUseMyLocation = document.getElementById('btn-use-my-location');
+  const latInput = document.getElementById('location-lat') as HTMLInputElement;
+  const lngInput = document.getElementById('location-lng') as HTMLInputElement;
+  const addressInput = document.getElementById('location-address') as HTMLInputElement;
+  const locationStatus = document.getElementById('location-status');
+  
+  let mapInstance: any = null;
+  let marker: any = null;
+
+  function initMap() {
+    if (mapInstance) {
+      setTimeout(() => mapInstance.invalidateSize(), 100);
+      return;
+    }
+    // Default vista inicial
+    mapInstance = (window as any).L.map('quedada-map-container').setView([40.4168, -3.7038], 5);
+    (window as any).L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap'
+    }).addTo(mapInstance);
+
+    mapInstance.on('click', async (e: any) => {
+      setMapMarker(e.latlng.lat, e.latlng.lng, undefined, true);
+    });
+    setTimeout(() => mapInstance.invalidateSize(), 100);
+  }
+
+  async function setMapMarker(lat: number, lng: number, addressArg?: string, isManualClick = false) {
+    if (marker) mapInstance.removeLayer(marker);
+    marker = (window as any).L.marker([lat, lng]).addTo(mapInstance);
+    
+    if (!isManualClick) {
+      mapInstance.setView([lat, lng], 15);
+    }
+    
+    if (latInput) latInput.value = lat.toString();
+    if (lngInput) lngInput.value = lng.toString();
+
+    if (locationStatus) locationStatus.textContent = 'Buscando dirección...';
+
+    try {
+      if (addressArg) {
+        if (addressInput) addressInput.value = addressArg;
+      } else {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=\${lat}&lon=\${lng}&zoom=18&addressdetails=1`);
+        const data = await res.json();
+        if (addressInput) addressInput.value = data.display_name || `\${lat.toFixed(4)}, \${lng.toFixed(4)}`;
+      }
+      if (locationStatus) locationStatus.textContent = addressInput?.value.substring(0, 40) + '...';
+    } catch (e) {
+      if (addressInput) addressInput.value = `\${lat.toFixed(4)}, \${lng.toFixed(4)}`;
+      if (locationStatus) locationStatus.textContent = 'Ubicación seleccionada';
+    }
+  }
+
+  categorySelect?.addEventListener('change', () => {
+    const selectedOption = categorySelect.options[categorySelect.selectedIndex];
+    if (selectedOption?.dataset.name === 'quedadas') {
+      quedadoSection?.classList.remove('hidden');
+      initMap();
+    } else {
+      quedadoSection?.classList.add('hidden');
+      if (latInput) latInput.value = '';
+      if (lngInput) lngInput.value = '';
+      if (addressInput) addressInput.value = '';
+      if (locationStatus) locationStatus.textContent = '';
+    }
+  });
+
+  btnUseMyLocation?.addEventListener('click', () => {
+    if (!navigator.geolocation) {
+      alert("La geolocalización no es soportada por tu navegador.");
+      return;
+    }
+    if (locationStatus) locationStatus.textContent = 'Obteniendo ubicación...';
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setMapMarker(position.coords.latitude, position.coords.longitude);
+      },
+      (error) => {
+        alert("Error al obtener la ubicación. Verifica los permisos de tu navegador.");
+        if (locationStatus) locationStatus.textContent = '';
+      }
+    );
+  });
+
+  btnMapSearch?.addEventListener('click', async () => {
+    const query = mapSearchInput?.value.trim();
+    if (!query) return;
+    
+    const mapSearchResults = document.getElementById('map-search-results');
+    if (locationStatus) locationStatus.textContent = 'Buscando...';
+    if (mapSearchResults) {
+      mapSearchResults.innerHTML = '';
+      mapSearchResults.classList.add('hidden');
+    }
+
+    try {
+      const res = await fetch(`https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?singleLine=${encodeURIComponent(query)}&f=pjson&maxLocations=5`);
+      const data = await res.json();
+      if (data && data.candidates && data.candidates.length > 0) {
+        if (data.candidates.length === 1) {
+          const candidate = data.candidates[0];
+          setMapMarker(candidate.location.y, candidate.location.x, candidate.address || query);
+        } else {
+          if (locationStatus) locationStatus.textContent = `Selecciona...`;
+          if (mapSearchResults) {
+            data.candidates.forEach((c: any) => {
+              const li = document.createElement('li');
+              li.className = 'px-3 py-2.5 hover:bg-white/5 cursor-pointer text-slate-200 transition-colors flex items-center gap-2';
+              li.innerHTML = `<svg class="w-4 h-4 text-[#00A3FF] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg><span class="truncate">${c.address}</span>`;
+              li.addEventListener('click', () => {
+                setMapMarker(c.location.y, c.location.x, c.address || query);
+                mapSearchResults.classList.add('hidden');
+              });
+              mapSearchResults.appendChild(li);
+            });
+            mapSearchResults.classList.remove('hidden');
+          }
+        }
+      } else {
+        alert("Ubicación no encontrada. Prueba a detallar más la dirección (ej. Calle, Número, Ciudad).");
+        if (locationStatus) locationStatus.textContent = '';
+      }
+    } catch(e) {
+      alert("Error al buscar ubicación.");
+      if (locationStatus) locationStatus.textContent = '';
+    }
+  });
+
+  // Ocultar dropdown al hacer click fuera
+  document.addEventListener('click', (e) => {
+    const mapSearchResults = document.getElementById('map-search-results');
+    if (mapSearchResults && !mapSearchResults.contains(e.target as Node) && e.target !== mapSearchInput && e.target !== btnMapSearch) {
+      mapSearchResults.classList.add('hidden');
+    }
+  });
+
 </script>

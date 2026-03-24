@@ -11,15 +11,21 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:@astrojs/netlify@^7.0.1",
-        "npm:@astrojs/node@^9.5.4",
+        "npm:@astrojs/check@~0.9.8",
+        "npm:@astrojs/netlify@^7.0.3",
+        "npm:@astrojs/node@^10.0.2",
         "npm:@mux/mux-node@^12.8.1",
         "npm:@mux/mux-player@^3.11.5",
         "npm:@mux/mux-uploader@^1.4.1",
         "npm:@supabase/supabase-js@^2.98.0",
         "npm:@tailwindcss/vite@^4.2.1",
-        "npm:astro@6",
-        "npm:tailwindcss@^4.2.1"
+        "npm:@tiptap/core@^3.20.4",
+        "npm:@tiptap/extension-link@^3.20.4",
+        "npm:@tiptap/pm@^3.20.4",
+        "npm:@tiptap/starter-kit@^3.20.4",
+        "npm:astro@^6.0.5",
+        "npm:tailwindcss@^4.2.1",
+        "npm:typescript@^5.9.3"
       ]
     }
   }
