@@ -424,12 +424,37 @@ try {
     });
 
     btnDelete?.addEventListener('click', async () => {
-      if (confirm('¿Estás seguro de que quieres eliminar este vídeo permanentemente?')) {
-        const { error } = await supabase.from('videos').delete().eq('id', videoId);
-        if (error) {
-          alert('Error eliminando vídeo: ' + error.message + '\nRecuerda haber aplicado las políticas RLS en Supabase.');
-        } else {
-          window.location.href = '/catalogo';
+      if (confirm('¿Estás seguro de que quieres eliminar este vídeo permanentemente? Esta acción también borrará el vídeo de Mux.')) {
+        const originalText = btnDelete.textContent;
+        (btnDelete as HTMLButtonElement).disabled = true;
+        btnDelete.textContent = 'Eliminando...';
+
+        try {
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          const accessToken = currentSession?.access_token || '';
+
+          const res = await fetch('/api/delete-video', {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ videoId }),
+          });
+
+          const result = await res.json();
+
+          if (!res.ok) {
+            alert('Error eliminando vídeo: ' + (result.error || res.statusText));
+            (btnDelete as HTMLButtonElement).disabled = false;
+            btnDelete.textContent = originalText;
+          } else {
+            window.location.href = '/catalogo';
+          }
+        } catch (err: any) {
+          alert('Error de red: ' + err.message);
+          (btnDelete as HTMLButtonElement).disabled = false;
+          btnDelete.textContent = originalText;
         }
       }
     });

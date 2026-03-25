@@ -928,39 +928,100 @@ const PROGRESO_HABILIDADES = [
           // Inyectar Historial Completo Real
           const videosCompletados = historialData.filter((item: any) => item.completado === true);
           const histContainer = document.getElementById('profile-historial-list');
+
+          function renderHistorialItem(item: any): string {
+            const v = item.videos;
+            if (!v) return '';
+            const dur = v.duracion ? Math.floor(v.duracion / 60) + ' mins' : 'VOD';
+            const isCompleted = item.completado ? 'Completado' : 'Pendiente';
+            const dateObj = new Date(item.actualizado_en);
+            const dateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }).toUpperCase();
+            return `
+            <div class="historial-item flex items-center gap-4 bg-[#111C2A] border border-white/5 p-4 rounded-2xl hover:bg-slate-800/60 transition-colors group" data-video-id="${v.id}">
+              <a href="/reproductor?id=${v.id}" class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#00A3FF]/10 text-[#00A3FF] hover:bg-[#00A3FF]/20 transition-colors">
+                <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </a>
+              <a href="/reproductor?id=${v.id}" class="flex-grow min-w-0 cursor-pointer">
+                <h4 class="font-bold text-sm text-slate-100 truncate group-hover:text-[#00A3FF] transition-colors">${v.titulo}</h4>
+                <div class="text-xs text-slate-400 mt-1 flex gap-2 items-center">
+                  <span>VOD</span>
+                  <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+                  <span>${dur}</span>
+                  <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
+                  <span class="${item.completado ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${isCompleted}</span>
+                </div>
+              </a>
+              <div class="flex items-center gap-3 flex-shrink-0">
+                <div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase">${dateStr}</div>
+                <button class="btn-unwatch opacity-0 group-hover:opacity-100 w-7 h-7 flex items-center justify-center rounded-full text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all" title="Marcar como no visto" data-video-id="${v.id}">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+            </div>
+            `;
+          }
+
           if (histContainer) {
             if (videosCompletados.length === 0) {
                histContainer.innerHTML = '<p class="text-sm text-slate-500 py-4 text-center">Aún no has completado ningún vídeo.</p>';
             } else {
-               histContainer.innerHTML = videosCompletados.slice(0, 5).map((item: any) => {
-                  const v = item.videos;
-                  if (!v) return '';
-                  const dur = v.duracion ? Math.floor(v.duracion / 60) + ' mins' : 'VOD';
-                  const isCompleted = item.completado ? 'Completado' : 'Pendiente';
-                  const dateObj = new Date(item.actualizado_en);
-                  const dateStr = dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' }).toUpperCase();
-                  return `
-                  <a href="/reproductor?id=${v.id}" class="flex items-center gap-4 bg-[#111C2A] border border-white/5 p-4 rounded-2xl hover:bg-slate-800 transition-colors cursor-pointer group">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 bg-[#00A3FF]/10 text-[#00A3FF]">
-                      <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    </div>
-                    <div class="flex-grow min-w-0">
-                      <h4 class="font-bold text-sm text-slate-100 truncate group-hover:text-[#00A3FF] transition-colors">${v.titulo}</h4>
-                      <div class="text-xs text-slate-400 mt-1 flex gap-2 items-center">
-                        <span>VOD</span>
-                        <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
-                        <span>${dur}</span>
-                        <span class="w-1 h-1 bg-slate-600 rounded-full"></span>
-                        <span class="${item.completado ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${isCompleted}</span>
-                      </div>
-                    </div>
-                    <div class="text-[10px] font-bold tracking-widest text-slate-500 uppercase flex-shrink-0">
-                      ${dateStr}
-                    </div>
-                  </a>
-                  `;
-               }).join('');
+               histContainer.innerHTML = videosCompletados.slice(0, 5).map(renderHistorialItem).join('');
             }
+
+            // Handler para los botones "Marcar como no visto"
+            histContainer.addEventListener('click', async (e) => {
+              const btn = (e.target as HTMLElement).closest('.btn-unwatch') as HTMLButtonElement | null;
+              if (!btn) return;
+              e.preventDefault();
+              e.stopPropagation();
+
+              const videoIdToUnwatch = btn.dataset.videoId;
+              if (!videoIdToUnwatch) return;
+
+              if (!confirm('¿Marcar este vídeo como no visto? Se eliminará de tu historial.')) return;
+
+              btn.disabled = true;
+              btn.innerHTML = '<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10" stroke-opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>';
+
+              try {
+                const { data: { session: currentSession } } = await supabase.auth.getSession();
+                const accessToken = currentSession?.access_token || '';
+
+                const res = await fetch('/api/unwatch-video', {
+                  method: 'DELETE',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`,
+                  },
+                  body: JSON.stringify({ videoId: videoIdToUnwatch }),
+                });
+
+                if (res.ok) {
+                  // Animar y eliminar la tarjeta del DOM
+                  const card = histContainer.querySelector(`.historial-item[data-video-id="${videoIdToUnwatch}"]`) as HTMLElement | null;
+                  if (card) {
+                    card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(20px)';
+                    setTimeout(() => {
+                      card.remove();
+                      if (histContainer.children.length === 0) {
+                        histContainer.innerHTML = '<p class="text-sm text-slate-500 py-4 text-center">Aún no has completado ningún vídeo.</p>';
+                      }
+                    }, 300);
+                  }
+                } else {
+                  const result = await res.json();
+                  alert('Error: ' + (result.error || 'No se pudo actualizar el historial'));
+                  btn.disabled = false;
+                  btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                }
+              } catch (err: any) {
+                alert('Error de red: ' + err.message);
+                btn.disabled = false;
+                btn.innerHTML = '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+              }
+            });
           }
         }
 
