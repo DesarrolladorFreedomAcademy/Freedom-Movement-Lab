@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
 ---
 
-<Layout title="Acceder | Freedom Movement Lab">
+<Layout title="Acceder | Freedom Movement">
   <!-- Minimal header without auth options avoiding infinite loops/visual bugs -->
   <header class="sticky top-0 z-50 w-full bg-[#0F172A]/90 backdrop-blur-md border-b border-white/5 py-4 px-8 flex items-center justify-between">
     <a href="/" class="flex items-center gap-2 group mx-auto">
@@ -12,7 +12,7 @@ import Nav from '../components/Nav.astro';
         <path d="M3.34 19a10 10 0 1 1 17.32 0"/>
         <path d="M12 2v2"/>
       </svg>
-      <span class="font-bold text-lg tracking-wide uppercase">Freedom Movement Lab</span>
+      <span class="font-bold text-lg tracking-wide uppercase">Freedom Movement</span>
     </a>
   </header>
 
@@ -112,7 +112,7 @@ import Nav from '../components/Nav.astro';
       if(toggleBtn) toggleBtn.innerText = 'Regístrate gratis';
     } else {
       if(title) title.innerText = 'Crea tu Cuenta';
-      if(subtitle) subtitle.innerText = 'Únete al Freedom Movement Lab y rompe tus límites.';
+      if(subtitle) subtitle.innerText = 'Únete al Freedom Movement y rompe tus límites.';
       if(submitBtn) submitBtn.innerText = 'Crear cuenta ahora';
       if(toggleText) toggleText.innerText = '¿Ya tienes cuenta?';
       if(toggleBtn) toggleBtn.innerText = 'Inicia sesión';

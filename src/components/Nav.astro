@@ -19,7 +19,7 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
   </div>
 
   <div class="flex items-center justify-center md:hidden shrink-0">
-    <span class="font-bold text-sm tracking-widest uppercase">Freedom Movement Lab</span>
+    <span class="font-bold text-sm tracking-widest uppercase">Freedom Movement</span>
   </div>
 
   <!-- === DESKTOP LAYOUT (md:) === -->
@@ -28,7 +28,7 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
       <svg class="w-8 h-8 text-[#00A3FF] group-hover:text-[#00E5FF] transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/><path d="M12 2v2"/>
       </svg>
-      <span class="font-bold text-lg tracking-wide uppercase">Freedom Movement Lab</span>
+      <span class="font-bold text-lg tracking-wide uppercase">Freedom Movement</span>
     </a>
 
     <div class="flex items-center gap-4 lg:gap-6 text-sm font-medium">
@@ -97,6 +97,15 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
     <ul id="mobile-search-results" class="hidden absolute top-full left-0 w-full bg-[#182538] border-b border-white/10 shadow-2xl z-50 max-h-[60vh] overflow-y-auto divide-y divide-white/5 text-sm"></ul>
   </div>
 </nav>
+
+<style>
+  /* Ocultar el avatar de desktop en vista móvil */
+  @media (max-width: 767px) {
+    #desktop-user-nav {
+      display: none !important;
+    }
+  }
+</style>
 
 <dialog id="modal-appeal" class="bg-[#0b1016] text-white border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-xl w-[90%] max-w-[450px] m-auto">
   <div class="flex items-center gap-4 mb-6">
