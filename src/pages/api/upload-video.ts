@@ -6,7 +6,7 @@ export const prerender = false;
 export const POST: APIRoute = async ({ request }) => {
     try {
         const body = await request.json();
-        const { titulo, descripcion, instructor, dificultad, usuarioId } = body;
+        const { titulo, descripcion, instructor, dificultad, categoria, miniatura_segundo, usuarioId } = body;
 
         if (!titulo || !usuarioId) {
             return new Response(JSON.stringify({ error: 'Faltan campos requeridos' }), { status: 400 });
@@ -65,6 +65,8 @@ export const POST: APIRoute = async ({ request }) => {
                 descripcion: descripcion || '',
                 instructor: instructor || 'Instructor Freedom',
                 dificultad: dificultad || 'PRINCIPIANTE',
+                categoria: categoria || null,
+                miniatura_segundo: miniatura_segundo ? parseInt(miniatura_segundo) : null,
                 mux_asset_id: muxUploadId,
                 estado: 'preparando',
                 usuario_id: usuarioId,

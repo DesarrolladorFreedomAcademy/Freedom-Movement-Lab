@@ -407,13 +407,75 @@ const PROGRESO_HABILIDADES = [
       <!-- ===== PANEL INSTRUCTOR / ADMIN: Subida de Vídeos ===== -->
       <!-- Oculto por defecto, sólo visible si rol = instructor | admin -->
       <section id="upload-panel" class="hidden mt-12 mb-6 animate-fade-in relative z-10 w-full max-w-4xl mx-auto">
-        <div class="flex items-center justify-center gap-3 mb-8 text-center flex-col md:flex-row">
+        <div class="flex items-center justify-center gap-3 mb-8 text-center flex-col md:flex-row relative">
           <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#EAB308] to-[#FACC15] flex items-center justify-center text-black shadow-[0_0_20px_rgba(234,179,8,0.4)]">
             <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><path d="M16 16l-4-4-4 4"/></svg>
           </div>
           <div>
             <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight">STUDIO CREADOR</h2>
             <span id="upload-panel-badge" class="text-[10px] font-black uppercase tracking-wider text-[#EAB308] px-2 py-0.5 mt-1 block text-center md:text-left">ACCESO COACH</span>
+          </div>
+          <!-- Botón flotante de Configuración -->
+          <button
+            id="btn-toggle-config"
+            title="Configuración del Studio"
+            class="absolute right-0 top-1/2 -translate-y-1/2 md:static md:translate-y-0 md:ml-auto w-10 h-10 rounded-full bg-slate-800 border border-white/10 hover:bg-slate-700 hover:border-white/20 text-slate-400 hover:text-white flex items-center justify-center transition-all duration-200 shadow-lg group"
+          >
+            <svg id="config-gear-icon" class="w-5 h-5 transition-transform duration-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+              <path d="M12 1v3M12 20v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M1 12h3M20 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Drawer de Configuración (oculto por defecto, toggle con el botón) -->
+        <div id="config-drawer" class="overflow-hidden transition-all duration-500 ease-in-out" style="max-height: 0; opacity: 0;">
+          <div class="border border-white/8 bg-[#0d1520]/80 rounded-2xl mb-8 p-6 backdrop-blur-sm">
+            <div class="flex items-center gap-2 mb-5">
+              <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+              <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest">Configuración del Studio</h3>
+              <span class="text-[10px] font-bold text-slate-600 ml-auto">Gestiona categorías y dificultades</span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+              <!-- Bloque: Categorías -->
+              <div class="bg-[#0b1016] border border-white/10 rounded-xl p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                    Categorías
+                  </h4>
+                  <span id="cat-count" class="text-[11px] font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <div id="cat-list" class="space-y-2 min-h-[60px]"></div>
+                <div class="flex gap-2 pt-2 border-t border-white/5">
+                  <input id="cat-new-input" type="text" placeholder="Nueva categoría..." class="input-dark flex-1 py-2 text-sm" />
+                  <button id="cat-add-btn" class="px-3 py-2 bg-[#00A3FF] hover:bg-[#008AE6] text-white text-sm font-bold rounded-lg transition-colors flex-shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bloque: Dificultades -->
+              <div class="bg-[#0b1016] border border-white/10 rounded-xl p-5 space-y-4">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                    <svg class="w-3.5 h-3.5 text-[#EAB308]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Dificultades
+                  </h4>
+                  <span id="dif-count" class="text-[11px] font-bold text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">0</span>
+                </div>
+                <div id="dif-list" class="space-y-2 min-h-[60px]"></div>
+                <div class="flex gap-2 pt-2 border-t border-white/5">
+                  <input id="dif-new-input" type="text" placeholder="Nueva dificultad..." class="input-dark flex-1 py-2 text-sm" />
+                  <button id="dif-add-btn" class="px-3 py-2 bg-[#EAB308] hover:bg-[#D97706] text-black text-sm font-bold rounded-lg transition-colors flex-shrink-0">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
 
@@ -452,6 +514,19 @@ const PROGRESO_HABILIDADES = [
                 <option value="AVANZADO">Avanzado</option>
                 <option value="EXPERTO">Experto</option>
               </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Categoría</label>
+              <select id="field-categoria" class="input-dark w-full">
+                <option value="">Cargando categorías...</option>
+              </select>
+            </div>
+
+            <!-- Zona de miniatura (segundo) -->
+            <div class="md:col-span-2">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">SEGUNDO DE LA MINIATURA <span class="text-slate-600 normal-case font-normal tracking-normal ml-1">(opcional)</span></label>
+              <input id="field-miniatura" type="number" min="0" step="1" placeholder="Ej: 5 (dejalo vacío para usar por defecto)" class="input-dark w-full" />
+              <p class="text-xs text-slate-500 mt-2">Mux extraerá automáticamente un fotograma de este segundo del vídeo.</p>
             </div>
 
             <!-- Zona de arrastre de vídeo -->
@@ -501,6 +576,7 @@ const PROGRESO_HABILIDADES = [
           </form>
         </div>
       </section>
+
 
     </div>
   </main>
@@ -1061,7 +1137,36 @@ const PROGRESO_HABILIDADES = [
            }
 
            inicializarUploader(session.user.id, nombreUsuario, defaultAvatarUrl);
-        }
+           inicializarConfigPanel();
+
+           // Toggle animado del drawer de configuración
+           const btnToggleConfig = document.getElementById('btn-toggle-config');
+           const configDrawer = document.getElementById('config-drawer');
+           const gearIcon = document.getElementById('config-gear-icon');
+           let configOpen = false;
+
+           btnToggleConfig?.addEventListener('click', () => {
+             configOpen = !configOpen;
+             if (configDrawer) {
+               if (configOpen) {
+                 // Expande: calculamos la altura real
+                 configDrawer.style.maxHeight = '2000px';
+                 configDrawer.style.opacity = '1';
+               } else {
+                 configDrawer.style.maxHeight = '0';
+                 configDrawer.style.opacity = '0';
+               }
+             }
+             if (gearIcon) {
+               gearIcon.style.transform = configOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+             }
+             if (btnToggleConfig) {
+               btnToggleConfig.classList.toggle('bg-[#EAB308]/20', configOpen);
+               btnToggleConfig.classList.toggle('border-[#EAB308]/40', configOpen);
+               btnToggleConfig.classList.toggle('text-[#EAB308]', configOpen);
+             }
+           });
+         }
         
       } catch (err) {
         console.error("No se pudo cargar perfil BD", err);
@@ -1159,7 +1264,21 @@ const PROGRESO_HABILIDADES = [
     if (uploaderAvatar) uploaderAvatar.src = instructorAvatar;
     if (uploaderName) uploaderName.textContent = instructorName;
 
-    // Mostrar nombre del archivo seleccionado
+    // Cargar categorías en el select desde Supabase
+    const catSelect = document.getElementById('field-categoria') as HTMLSelectElement;
+    supabase.from('categorias').select('nombre').order('orden').then(({ data: cats }) => {
+      if (catSelect) {
+        catSelect.innerHTML = '<option value="">Sin categoría</option>';
+        (cats || []).forEach((c: any) => {
+          const opt = document.createElement('option');
+          opt.value = c.nombre;
+          opt.textContent = c.nombre;
+          catSelect.appendChild(opt);
+        });
+      }
+    });
+
+
     fileInput?.addEventListener('change', () => {
       const file = fileInput.files?.[0];
       if (file && fileNameEl) {
@@ -1192,8 +1311,10 @@ const PROGRESO_HABILIDADES = [
 
       const titulo = (document.getElementById('field-titulo') as HTMLInputElement)?.value;
       const descripcion = (document.getElementById('field-descripcion') as HTMLTextAreaElement)?.value;
-      const instructor = instructorName; // Se asigna automáticamente del usuario autenticado
+      const instructor = instructorName;
       const dificultad = (document.getElementById('field-dificultad') as HTMLSelectElement)?.value;
+      const categoria = (document.getElementById('field-categoria') as HTMLSelectElement)?.value;
+      const miniatura_segundo = (document.getElementById('field-miniatura') as HTMLInputElement)?.value;
       const archivo = fileInput?.files?.[0];
 
       if (!titulo || !archivo) {
@@ -1201,8 +1322,8 @@ const PROGRESO_HABILIDADES = [
         return;
       }
 
+      setStatus('loading', 'Iniciando subida...');
       uploadBtn.disabled = true;
-      setStatus('loading', 'Solicitando URL de subida a Mux...');
 
       try {
         // Obtener el token de la sesión actual para enviarlo al servidor
@@ -1216,7 +1337,7 @@ const PROGRESO_HABILIDADES = [
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ titulo, descripcion, instructor, dificultad, usuarioId }),
+          body: JSON.stringify({ titulo, descripcion, instructor, dificultad, categoria, miniatura_segundo, usuarioId }),
         });
 
         if (!res.ok) throw new Error('No se pudo obtener la URL de subida.');
@@ -1259,6 +1380,158 @@ const PROGRESO_HABILIDADES = [
         uploadBtn.disabled = false;
       }
     });
+  }
+
+  // ===== CONFIG PANEL: Categorías y Dificultades =====
+  function inicializarConfigPanel() {
+    // -- Helper genérico para renderizar una lista --
+    function renderList(
+      listEl: HTMLElement | null,
+      countEl: HTMLElement | null,
+      items: any[],
+      onDelete: (id: string, nombre: string) => Promise<void>,
+      onRename: (id: string, nombre: string) => Promise<void>
+    ) {
+      if (!listEl) return;
+      if (items.length === 0) {
+        listEl.innerHTML = '<p class="text-xs text-slate-600 py-4 text-center">Sin elementos. Añade uno abajo.</p>';
+        if (countEl) countEl.textContent = '0';
+        return;
+      }
+      if (countEl) countEl.textContent = items.length.toString();
+      listEl.innerHTML = items.map(item => `
+        <div class="config-item flex items-center gap-2 group" data-id="${item.id}">
+          <span class="config-name flex-grow text-sm font-medium text-slate-200 px-3 py-1.5 bg-slate-800/50 rounded-lg border border-white/5">${item.nombre}</span>
+          <button class="btn-rename-item w-7 h-7 flex items-center justify-center text-slate-500 hover:text-[#00A3FF] hover:bg-[#00A3FF]/10 rounded-lg transition-colors" title="Renombrar">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+          <button class="btn-delete-item w-7 h-7 flex items-center justify-center text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors" title="Eliminar">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      `).join('');
+
+      // Listeners
+      listEl.querySelectorAll('.btn-delete-item').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const div = btn.closest('.config-item') as HTMLElement;
+          const id = div.dataset.id!;
+          const nombre = div.querySelector('.config-name')!.textContent!.trim();
+          if (confirm(`¿Eliminar "${nombre}"?`)) await onDelete(id, nombre);
+        });
+      });
+      listEl.querySelectorAll('.btn-rename-item').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const div = btn.closest('.config-item') as HTMLElement;
+          const id = div.dataset.id!;
+          const actual = div.querySelector('.config-name')!.textContent!.trim();
+          const nuevo = prompt('Nuevo nombre:', actual);
+          if (nuevo && nuevo.trim() && nuevo.trim() !== actual) await onRename(id, nuevo.trim());
+        });
+      });
+    }
+
+    // ---- CATEGORÍAS ----
+    const catList = document.getElementById('cat-list');
+    const catCount = document.getElementById('cat-count');
+    const catNewInput = document.getElementById('cat-new-input') as HTMLInputElement;
+    const catAddBtn = document.getElementById('cat-add-btn');
+    let categorias: any[] = [];
+
+    async function cargarCategorias() {
+      const { data } = await supabase.from('categorias').select('id, nombre, orden').order('orden');
+      categorias = data || [];
+      renderList(catList, catCount, categorias,
+        async (id, nombre) => {
+          await supabase.from('categorias').delete().eq('id', id);
+          await cargarCategorias();
+          await sincronizarCatSelect();
+        },
+        async (id, nombre) => {
+          await supabase.from('categorias').update({ nombre }).eq('id', id);
+          await cargarCategorias();
+          await sincronizarCatSelect();
+        }
+      );
+    }
+
+    async function sincronizarCatSelect() {
+      const catSelect = document.getElementById('field-categoria') as HTMLSelectElement;
+      const { data: cats } = await supabase.from('categorias').select('nombre').order('orden');
+      if (catSelect) {
+        const val = catSelect.value;
+        catSelect.innerHTML = '<option value="">Sin categoría</option>';
+        (cats || []).forEach((c: any) => {
+          const opt = document.createElement('option');
+          opt.value = c.nombre;
+          opt.textContent = c.nombre;
+          if (c.nombre === val) opt.selected = true;
+          catSelect.appendChild(opt);
+        });
+      }
+    }
+
+    catAddBtn?.addEventListener('click', async () => {
+      const nombre = catNewInput?.value.trim();
+      if (!nombre) return;
+      const maxOrden = categorias.length > 0 ? Math.max(...categorias.map(c => c.orden || 0)) + 1 : 1;
+      await supabase.from('categorias').insert({ nombre, orden: maxOrden });
+      catNewInput.value = '';
+      await cargarCategorias();
+      await sincronizarCatSelect();
+    });
+
+    // ---- DIFICULTADES ----
+    const difList = document.getElementById('dif-list');
+    const difCount = document.getElementById('dif-count');
+    const difNewInput = document.getElementById('dif-new-input') as HTMLInputElement;
+    const difAddBtn = document.getElementById('dif-add-btn');
+    let dificultades: any[] = [];
+
+    async function cargarDificultades() {
+      const { data } = await supabase.from('dificultades').select('id, nombre, orden').order('orden');
+      dificultades = data || [];
+      renderList(difList, difCount, dificultades,
+        async (id, nombre) => {
+          await supabase.from('dificultades').delete().eq('id', id);
+          await cargarDificultades();
+          sincronizarDifSelect();
+        },
+        async (id, nombre) => {
+          await supabase.from('dificultades').update({ nombre }).eq('id', id);
+          await cargarDificultades();
+          sincronizarDifSelect();
+        }
+      );
+    }
+
+    function sincronizarDifSelect() {
+      const difSelect = document.getElementById('field-dificultad') as HTMLSelectElement;
+      if (!difSelect) return;
+      const val = difSelect.value;
+      difSelect.innerHTML = '';
+      dificultades.forEach((d: any) => {
+        const opt = document.createElement('option');
+        opt.value = d.nombre;
+        opt.textContent = d.nombre.charAt(0).toUpperCase() + d.nombre.slice(1).toLowerCase();
+        if (d.nombre === val) opt.selected = true;
+        difSelect.appendChild(opt);
+      });
+    }
+
+    difAddBtn?.addEventListener('click', async () => {
+      const nombre = difNewInput?.value.trim().toUpperCase();
+      if (!nombre) return;
+      const maxOrden = dificultades.length > 0 ? Math.max(...dificultades.map(d => d.orden || 0)) + 1 : 1;
+      await supabase.from('dificultades').insert({ nombre, orden: maxOrden });
+      difNewInput.value = '';
+      await cargarDificultades();
+      sincronizarDifSelect();
+    });
+
+    // Cargar al inicio
+    cargarCategorias();
+    cargarDificultades();
   }
 
   // --- Lógica de Cerrar Sesión ---

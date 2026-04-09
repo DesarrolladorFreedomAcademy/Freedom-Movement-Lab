@@ -11,7 +11,7 @@ let videoData: any = null;
 try {
   let query = supabase
     .from('videos')
-    .select('id, usuario_id, titulo, descripcion, instructor, duracion, dificultad, visualizaciones, mux_playback_id, creado_en')
+    .select('id, usuario_id, titulo, descripcion, instructor, duracion, dificultad, categoria, visualizaciones, mux_playback_id, miniatura_segundo, creado_en')
     .eq('estado', 'listo')
     .limit(1);
 
@@ -32,13 +32,10 @@ const VIDEO_DATA = {
   id: videoData?.id || null,
   usuario_id: videoData?.usuario_id || null,
   title: videoData?.titulo || "Técnicas Avanzadas de Carrera por la Pared (Wall Run)",
-  views: videoData?.visualizaciones != null
-    ? videoData.visualizaciones.toLocaleString('es-ES') + ' visualizaciones'
-    : '0 visualizaciones',
   date: videoData?.creado_en
     ? new Date(videoData.creado_en).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
     : "12 de oct. de 2023",
-  tags: [videoData?.dificultad?.toUpperCase() || "AVANZADO", "BASES DEL PARKOUR"],
+  tags: [videoData?.dificultad?.toUpperCase() || "AVANZADO", videoData?.categoria?.toUpperCase() || "PARKOUR"],
   description: videoData?.descripcion || "En este tutorial avanzado, desglosamos la mecánica de la carrera vertical por la pared (wall run), enfocándonos en la colocación del pie, el impulso ascendente y la transición al salto de gato. También cubriremos estrategias de recuperación y errores comunes para entornos de gran altitud.",
   muxPlaybackId: videoData?.mux_playback_id || null,
   instructor: {
@@ -47,7 +44,7 @@ const VIDEO_DATA = {
     avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(videoData?.instructor || 'Alex Freedom')}&background=0F172A&color=fff`
   },
   thumbnail: videoData?.mux_playback_id 
-    ? `https://image.mux.com/${videoData.mux_playback_id}/thumbnail.webp?time=1`
+    ? `https://image.mux.com/${videoData.mux_playback_id}/thumbnail.webp?time=${videoData.miniatura_segundo ?? 1}`
     : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=1200&auto=format&fit=crop"
 };
 
@@ -82,7 +79,7 @@ let upNextVideos: any[] = [];
 try {
   let q = supabase
     .from('videos')
-    .select('id, titulo, instructor, dificultad, mux_playback_id')
+    .select('id, titulo, instructor, dificultad, mux_playback_id, miniatura_segundo')
     .eq('estado', 'listo')
     .order('creado_en', { ascending: false })
     .limit(5);
@@ -183,11 +180,6 @@ try {
             </div>
 
             <div class="text-sm font-medium text-slate-400 mb-6 flex items-center gap-2">
-              <span class="flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <span id="views-count">{VIDEO_DATA.views}</span>
-              </span>
-              <span class="w-1 h-1 rounded-full bg-slate-600"></span>
               <span>{VIDEO_DATA.date}</span>
             </div>
 
@@ -283,7 +275,7 @@ try {
                    
                    <div class="w-[140px] md:w-[160px] flex-shrink-0 aspect-video rounded-xl overflow-hidden relative border border-white/5 shadow-md">
                      <img
-                       src={video.mux_playback_id ? `https://image.mux.com/${video.mux_playback_id}/thumbnail.webp?time=1` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=400&auto=format&fit=crop"}
+                       src={video.mux_playback_id ? `https://image.mux.com/${video.mux_playback_id}/thumbnail.webp?time=${video.miniatura_segundo ?? 1}` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=400&auto=format&fit=crop"}
                        alt={video.titulo}
                        class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                    </div>

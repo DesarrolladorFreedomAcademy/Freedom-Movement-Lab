@@ -11,7 +11,7 @@ let videosGuardados = [];
 try {
   const { data, error } = await supabase
     .from('videos')
-    .select('id, titulo, instructor, dificultad, creado_en, mux_playback_id, mux_asset_id, duracion')
+    .select('id, titulo, instructor, dificultad, categoria, creado_en, mux_playback_id, mux_asset_id, duracion, miniatura_segundo')
     .eq('estado', 'listo')
     .order('creado_en', { ascending: false });
     
@@ -30,7 +30,8 @@ const talleresDeBD = videosGuardados.map((v: any) => ({
   dificultad: v.dificultad?.toUpperCase() || "INTERMEDIO",
   duracion: v.duracion ? `${Math.floor(v.duracion / 60).toString().padStart(2, '0')}:${(v.duracion % 60).toString().padStart(2, '0')}` : "00:00",
   color_dif: v.dificultad === 'PRINCIPIANTE' ? 'bg-emerald-500 text-white' : (v.dificultad === 'EXPERTO' ? 'bg-rose-500 text-white' : 'bg-[#00A3FF] text-white'),
-  thumb: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1&width=600` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop"
+  thumb: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=${v.miniatura_segundo ?? 1}&width=600` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop",
+  categoria: v.categoria || 'Sin categoría'
 }));
 
 const TALLERES = [...talleresDeBD];
@@ -79,24 +80,48 @@ const TALLERES = [...talleresDeBD];
         
         <!-- CATEGORIES -->
         <div>
-          <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-3">CATEGORIES</h3>
-          <ul class="space-y-1">
+          <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-3">CATEGORÍAS</h3>
+          <ul class="space-y-1" id="sidebar-categories">
             <li>
-              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Tricking">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Tricking
+              </a>
+            </li>
+            <li>
+              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="XMA">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                XMA
+              </a>
+            </li>
+            <li>
+              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Artes marciales">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
+                Artes marciales
+              </a>
+            </li>
+            <li>
+              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Parkour">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10 6 4 4-4 4"/><path d="M14 6h7v7"/><path d="m21 6-7 7"/><path d="m4 10 4-4 4 4"/></svg>
-                Atletismo
+                Parkour
               </a>
             </li>
             <li>
-              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Calistenia">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 3v18"/><path d="M21 3v18"/></svg>
+                Calistenia
+              </a>
+            </li>
+            <li>
+              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Condicionamiento">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+                Condicionamiento
+              </a>
+            </li>
+            <li>
+              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="MindSet">
                 <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-4"/><path d="M12 2a9 9 0 0 0-9 9c0 5 9 11 9 11s9-6 9-11a9 9 0 0 0-9-9z"/><circle cx="12" cy="11" r="3"/></svg>
-                Mentalidad
-              </a>
-            </li>
-            <li>
-              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2.5 12a5.5 5.5 0 0 1 11 0c0 4.5-4 5.5-4 5.5s-1-2.5-4-3.5a10.5 10.5 0 0 0-3 2z"/><path d="M12 12a5.5 5.5 0 0 1 11 0c0 4.5-4 5.5-4 5.5s-1-2.5-4-3.5a10.5 10.5 0 0 0-3 2z"/></svg>
-                Artes Creativas
+                MindSet
               </a>
             </li>
           </ul>
@@ -151,7 +176,7 @@ const TALLERES = [...talleresDeBD];
       <div id="view-todos">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {TALLERES.map((taller) => (
-            <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"} class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block">
+            <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"} data-categoria={taller.categoria} class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block">
               
               <div class="relative w-full aspect-[16/10] overflow-hidden">
                 <img src={taller.thumb} alt={taller.titulo} loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -540,4 +565,42 @@ const TALLERES = [...talleresDeBD];
   }
 
   updateFollowingBadge();
+
+  // ==== FILTRADO POR CATEGORÍA (SIDEBAR) ====
+  const catLinks = document.querySelectorAll('.sidebar-cat-link');
+  let activeCat: string | null = null;
+
+  catLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const cat = link.getAttribute('data-cat');
+
+      if (activeCat === cat) {
+        // Deseleccionar si se hace clic de nuevo en la misma
+        activeCat = null;
+        catLinks.forEach(l => {
+          l.className = 'sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors';
+        });
+      } else {
+        activeCat = cat;
+        catLinks.forEach(l => {
+          const isActive = l.getAttribute('data-cat') === cat;
+          l.className = isActive
+            ? 'sidebar-cat-link flex items-center gap-3 px-4 py-2.5 bg-[#00A3FF]/10 text-[#00A3FF] rounded-xl font-medium transition-colors'
+            : 'sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors';
+        });
+      }
+
+      // Filtrar las tarjetas
+      const cards = document.querySelectorAll('[data-categoria]');
+      cards.forEach((card: Element) => {
+        const cardCat = card.getAttribute('data-categoria') || '';
+        if (!activeCat || cardCat.toLowerCase() === activeCat.toLowerCase()) {
+          (card as HTMLElement).style.display = '';
+        } else {
+          (card as HTMLElement).style.display = 'none';
+        }
+      });
+    });
+  });
 </script>
