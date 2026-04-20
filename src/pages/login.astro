@@ -147,8 +147,7 @@ import Nav from '../components/Nav.astro';
       
       if (!error) {
         // En supabase si tienes confirmación de correo habilitada, debes avisar.
-        // Asumiremos para desarrollo que hace autologin o enviará un mail.
-        alert('Cuenta creada. Si requieres confirmar el mail, revisa tu bandeja de entrada. Serás redirigido.');
+        window.showToast?.('Cuenta creada. Si requieres confirmar el correo, revisa tu bandeja de entrada.', 'success', 6000);
       }
     }
 

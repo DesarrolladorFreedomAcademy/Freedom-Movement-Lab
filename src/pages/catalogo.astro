@@ -176,7 +176,7 @@ const TALLERES = [...talleresDeBD];
       <div id="view-todos">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {TALLERES.map((taller) => (
-            <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"} data-categoria={taller.categoria} class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block">
+            <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"} data-categoria={taller.categoria} class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block relative">
               
               <div class="relative w-full aspect-[16/10] overflow-hidden">
                 <img src={taller.thumb} alt={taller.titulo} loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -194,6 +194,15 @@ const TALLERES = [...talleresDeBD];
                       <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                    </div>
                 </div>
+                <!-- Botón añadir a colección -->
+                <button
+                  class="btn-add-to-list absolute top-2 right-2 z-30 w-9 h-9 rounded-full bg-black/60 backdrop-blur border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:border-[#00A3FF]/50 hover:bg-[#00A3FF]/20 opacity-0 group-hover:opacity-100 transition-all"
+                  data-video-id={taller.id}
+                  data-video-titulo={taller.titulo}
+                  title="Añadir a colección"
+                  onclick="event.preventDefault(); event.stopPropagation(); abrirPanelColeccion(this)">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </button>
               </div>
 
               <div class="p-5">
@@ -268,8 +277,12 @@ const TALLERES = [...talleresDeBD];
   </div>
   
   <footer class="border-t border-slate-800 bg-[#0F172A] relative z-10">
-    <div class="container xl:max-w-7xl mx-auto px-8 py-8 flex items-center justify-center text-xs text-slate-500 font-medium">
+    <div class="container xl:max-w-7xl mx-auto px-8 py-8 flex items-center justify-between text-xs text-slate-500 font-medium">
       <p>© 2026 Freedom movement lab. Rompe los límites.</p>
+      <div class="flex gap-6">
+        <a href="/privacidad" class="hover:text-white transition-colors">Privacidad</a>
+        <a href="/terminos" class="hover:text-white transition-colors">Términos</a>
+      </div>
     </div>
   </footer>
 </Layout>
@@ -505,7 +518,7 @@ const TALLERES = [...talleresDeBD];
         const instructorName = btn.getAttribute('data-instructor');
         if (!instructorName) return;
 
-        const confirmed = confirm(`¿Dejar de seguir a ${instructorName}?`);
+        const confirmed = await window.showConfirm?.(`¿Dejar de seguir a ${instructorName}?`, 'Dejar de seguir') ?? false;
         if (!confirmed) return;
 
         const { data: { session } } = await supabase.auth.getSession();
@@ -603,4 +616,204 @@ const TALLERES = [...talleresDeBD];
       });
     });
   });
+
+  // ==== FILTRO POR URL ?cat= (desde la página de Inicio) ====
+  function aplicarFiltroCatUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const catParam = urlParams.get('cat');
+    if (!catParam) return;
+
+    // Buscar el link del sidebar que coincida
+    const catLinkMatch = Array.from(catLinks).find(
+      l => (l.getAttribute('data-cat') || '').toLowerCase() === catParam.toLowerCase()
+    );
+
+    if (catLinkMatch) {
+      catLinkMatch.dispatchEvent(new Event('click'));
+    } else {
+      // Filtrar directamente aunque no esté en el sidebar
+      activeCat = catParam;
+      const cards = document.querySelectorAll('[data-categoria]');
+      cards.forEach((card: Element) => {
+        const cardCat = card.getAttribute('data-categoria') || '';
+        (card as HTMLElement).style.display =
+          cardCat.toLowerCase() === catParam.toLowerCase() ? '' : 'none';
+      });
+    }
+  }
+
+  aplicarFiltroCatUrl();
+
+  // ==== PANEL DE COLECCIONES (AÑADIR A LISTA) ====
+  // El panel se reutiliza globalmente. Se inyecta en el DOM al cargar la página.
+  const panelHtml = `
+    <div id="col-panel" style="display:none;position:fixed;inset:0;z-index:8000;" onclick="document.getElementById('col-panel').style.display='none'">
+      <div id="col-panel-inner" style="position:absolute;background:#111C2A;border:1px solid rgba(255,255,255,0.12);border-radius:1rem;padding:1.25rem;width:280px;box-shadow:0 16px 48px rgba(0,0,0,0.8);max-height:400px;overflow-y:auto;" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <span style="font-size:0.875rem;font-weight:700;color:#f1f5f9;">Añadir a colección</span>
+          <button onclick="document.getElementById('col-panel').style.display='none'" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:1.25rem;line-height:1;">&#215;</button>
+        </div>
+        <div id="col-panel-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:0.75rem;"></div>
+        <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:0.75rem;display:flex;gap:8px;">
+          <input id="col-panel-input" type="text" maxlength="60" placeholder="Nueva colección..." style="flex:1;background:#1E293B;border:1px solid rgba(255,255,255,0.08);color:white;padding:8px 12px;border-radius:8px;font-size:0.8125rem;outline:none;">
+          <button id="col-panel-create" style="background:#00A3FF;color:white;border:none;border-radius:8px;padding:8px 12px;font-size:0.8125rem;font-weight:700;cursor:pointer;">Crear</button>
+        </div>
+        <p id="col-panel-error" style="display:none;font-size:0.75rem;color:#f87171;margin-top:6px;font-weight:600;"></p>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', panelHtml);
+
+  let panelVideoId: string | null = null;
+  let panelColecciones: any[] = [];
+  let panelUserId: string | null = null;
+
+  // Cargar userId una vez
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) panelUserId = session.user.id;
+  });
+
+  async function abrirPanelColeccion(btn: HTMLElement) {
+    const videoId = btn.getAttribute('data-video-id');
+    const videoTitulo = btn.getAttribute('data-video-titulo') || '';
+    if (!videoId) return;
+
+    if (!panelUserId) {
+      window.showToast?.('Inicia sesión para gestionar colecciones.', 'warning');
+      return;
+    }
+
+    panelVideoId = videoId;
+    const panel = document.getElementById('col-panel')!;
+    const panelInner = document.getElementById('col-panel-inner')!;
+
+    // Posicionar el panel cerca del botón
+    const rect = btn.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    let top = rect.bottom + scrollY + 8;
+    let left = rect.left;
+    if (left + 280 > window.innerWidth - 16) left = window.innerWidth - 296;
+    panelInner.style.top = top + 'px';
+    panelInner.style.left = left + 'px';
+
+    // Cargar colecciones del usuario
+    const lista = document.getElementById('col-panel-lista')!;
+    lista.innerHTML = '<span style="color:#64748b;font-size:0.8125rem;">Cargando...</span>';
+    panel.style.display = 'block';
+
+    try {
+      const { data: cols, error } = await supabase
+        .from('colecciones')
+        .select(`id, nombre, coleccion_videos!left(video_id, orden)`)
+        .eq('usuario_id', panelUserId)
+        .order('nombre');
+
+      if (error) throw error;
+      panelColecciones = cols || [];
+
+      if (panelColecciones.length === 0) {
+        lista.innerHTML = '<span style="color:#64748b;font-size:0.8125rem;">No tienes colecciones. Crea una abajo.</span>';
+      } else {
+        lista.innerHTML = panelColecciones.map(col => {
+          const yaEsta = (col.coleccion_videos || []).some((cv: any) => cv.video_id === videoId);
+          return `
+            <button class="col-panel-item" data-col-id="${col.id}" style="display:flex;align-items:center;justify-content:space-between;width:100%;background:${yaEsta ? 'rgba(0,163,255,0.1)' : 'rgba(255,255,255,0.03)'};border:1px solid ${yaEsta ? 'rgba(0,163,255,0.3)' : 'rgba(255,255,255,0.06)'};border-radius:8px;padding:9px 12px;color:${yaEsta ? '#00A3FF' : '#cbd5e1'};font-size:0.8125rem;font-weight:600;cursor:pointer;text-align:left;transition:all 0.15s;" data-ya-esta="${yaEsta}">
+              <span style="truncate;flex:1;">${col.nombre}</span>
+              ${yaEsta ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.4;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>'}
+            </button>
+          `;
+        }).join('');
+
+        // Listeners de items
+        document.querySelectorAll('.col-panel-item').forEach(item => {
+          item.addEventListener('click', async () => {
+            const colId = (item as HTMLElement).getAttribute('data-col-id')!;
+            const yaEsta = (item as HTMLElement).getAttribute('data-ya-esta') === 'true';
+            const colNombre = panelColecciones.find(c => c.id === colId)?.nombre || '';
+
+            if (yaEsta) {
+              // Quitar de la colección
+              const { error } = await supabase.from('coleccion_videos')
+                .delete()
+                .eq('coleccion_id', colId)
+                .eq('video_id', panelVideoId!);
+              if (!error) {
+                window.showToast?.(`Quitado de "${colNombre}".`, 'info');
+                panel.style.display = 'none';
+              } else {
+                window.showToast?.('Error al quitar el vídeo.', 'error');
+              }
+            } else {
+              // Añadir a colección
+              const ordenes = (panelColecciones.find(c => c.id === colId)?.coleccion_videos || [])
+                .map((cv: any) => Number(cv.orden))
+                .filter((n: number) => Number.isFinite(n));
+              const maxOrden = ordenes.length > 0 ? Math.max(...ordenes) : 0;
+              const { error } = await supabase.from('coleccion_videos').insert({
+                coleccion_id: colId,
+                video_id: panelVideoId!,
+                orden: maxOrden + 1
+              });
+              if (!error) {
+                window.showToast?.(`Añadido a "${colNombre}".`, 'success');
+                panel.style.display = 'none';
+              } else {
+                console.error('Error al añadir a colección:', error);
+                window.showToast?.('Error al añadir el vídeo.', 'error');
+              }
+            }
+          });
+        });
+      }
+    } catch(e) {
+      lista.innerHTML = '<span style="color:#f87171;font-size:0.8125rem;">Error al cargar colecciones.</span>';
+    }
+  }
+
+  // Exponer globalmente para el onclick del botón
+  (window as any).abrirPanelColeccion = abrirPanelColeccion;
+
+  // Crear nueva colección desde el panel
+  document.getElementById('col-panel-create')?.addEventListener('click', async () => {
+    if (!panelUserId) return;
+    const input = document.getElementById('col-panel-input') as HTMLInputElement;
+    const errorEl = document.getElementById('col-panel-error')!;
+    const nombre = input.value.trim();
+    if (!nombre) return;
+
+    const normalizar = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const existe = panelColecciones.some(c => normalizar(c.nombre) === normalizar(nombre));
+    if (existe) {
+      errorEl.textContent = 'Ya tienes una colección con ese nombre.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+
+    const { data, error } = await supabase.from('colecciones').insert({
+      usuario_id: panelUserId,
+      nombre
+    }).select().single();
+
+    if (error) {
+      window.showToast?.('Error al crear la colección.', 'error');
+      return;
+    }
+
+    // Añadir el vídeo directamente a la nueva colección
+    if (panelVideoId && data?.id) {
+      await supabase.from('coleccion_videos').insert({
+        coleccion_id: data.id,
+        video_id: panelVideoId,
+        orden: 0
+      });
+      window.showToast?.(`Colección "${nombre}" creada y vídeo añadido.`, 'success');
+    } else {
+      window.showToast?.(`Colección "${nombre}" creada.`, 'success');
+    }
+
+    input.value = '';
+    document.getElementById('col-panel')!.style.display = 'none';
+  });
+
 </script>

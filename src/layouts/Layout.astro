@@ -30,5 +30,166 @@ const { title, description = "Aprende el flow urbano con traceurs de clase mundi
 		
 		<!-- Mobile Bottom Navigation Layer -->
 		<BottomNav />
+
+		<!-- ===== SISTEMA GLOBAL DE TOASTS/NOTIFICACIONES ===== -->
+		<div id="toast-container" aria-live="polite" aria-atomic="false" style="position:fixed;bottom:80px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px;max-width:360px;pointer-events:none;"></div>
+
+		<!-- Modal de confirmación custom (reemplaza window.confirm) -->
+		<div id="confirm-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);align-items:center;justify-content:center;">
+			<div style="background:#111C2A;border:1px solid rgba(255,255,255,0.1);border-radius:1.25rem;padding:1.75rem;max-width:360px;width:90%;box-shadow:0 25px 50px rgba(0,0,0,0.8);">
+				<p id="confirm-message" style="color:#e2e8f0;font-size:0.95rem;font-weight:600;margin:0 0 1.5rem;line-height:1.5;"></p>
+				<div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+					<button id="confirm-cancel" style="padding:0.6rem 1.25rem;border-radius:0.75rem;border:1px solid rgba(255,255,255,0.1);background:transparent;color:#94a3b8;font-weight:700;font-size:0.875rem;cursor:pointer;transition:all 0.2s;">Cancelar</button>
+					<button id="confirm-ok" style="padding:0.6rem 1.25rem;border-radius:0.75rem;border:none;background:#ef4444;color:white;font-weight:700;font-size:0.875rem;cursor:pointer;transition:all 0.2s;">Confirmar</button>
+				</div>
+			</div>
+		</div>
+
+		<style is:global>
+			@keyframes toast-in {
+				from { opacity: 0; transform: translateX(110%); }
+				to   { opacity: 1; transform: translateX(0); }
+			}
+			@keyframes toast-out {
+				from { opacity: 1; transform: translateX(0); }
+				to   { opacity: 0; transform: translateX(110%); }
+			}
+			.fm-toast {
+				pointer-events: auto;
+				display: flex;
+				align-items: flex-start;
+				gap: 12px;
+				padding: 14px 16px;
+				border-radius: 14px;
+				border: 1px solid;
+				background: #111C2A;
+				box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+				animation: toast-in 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+				max-width: 360px;
+				min-width: 280px;
+				min-height: 52px;
+			}
+			.fm-toast.closing {
+				animation: toast-out 0.3s ease forwards;
+			}
+			.fm-toast-success { border-color: rgba(34,197,94,0.4); }
+			.fm-toast-success .fm-toast-icon { color: #22c55e; background: rgba(34,197,94,0.12); }
+			.fm-toast-error { border-color: rgba(239,68,68,0.4); }
+			.fm-toast-error .fm-toast-icon { color: #ef4444; background: rgba(239,68,68,0.12); }
+			.fm-toast-info { border-color: rgba(0,163,255,0.4); }
+			.fm-toast-info .fm-toast-icon { color: #00A3FF; background: rgba(0,163,255,0.12); }
+			.fm-toast-warning { border-color: rgba(234,179,8,0.4); }
+			.fm-toast-warning .fm-toast-icon { color: #EAB308; background: rgba(234,179,8,0.12); }
+			.fm-toast-icon {
+				width: 32px;
+				height: 32px;
+				border-radius: 50%;
+				flex-shrink: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+			}
+			.fm-toast-msg {
+				flex: 1;
+				font-size: 0.875rem;
+				font-weight: 600;
+				color: #e2e8f0;
+				line-height: 1.5;
+				align-self: center;
+			}
+			.fm-toast-close {
+				background: none;
+				border: none;
+				color: #475569;
+				cursor: pointer;
+				padding: 2px;
+				flex-shrink: 0;
+				align-self: flex-start;
+				line-height: 1;
+				transition: color 0.2s;
+			}
+			.fm-toast-close:hover { color: #94a3b8; }
+			@media (max-width: 640px) {
+				#toast-container {
+					bottom: 76px !important;
+					right: 10px !important;
+					left: 10px !important;
+					max-width: none !important;
+				}
+				.fm-toast { min-width: unset; }
+			}
+		</style>
+
+		<script is:inline>
+			(function() {
+				const ICONS = {
+					success: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+					error:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+					info:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+					warning: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+				};
+
+				window.showToast = function(mensaje, tipo, duracion) {
+					tipo = tipo || 'info';
+					duracion = duracion !== undefined ? duracion : 4000;
+					const container = document.getElementById('toast-container');
+					if (!container) return;
+
+					const toast = document.createElement('div');
+					toast.className = 'fm-toast fm-toast-' + tipo;
+					toast.innerHTML =
+						'<div class="fm-toast-icon">' + (ICONS[tipo] || ICONS.info) + '</div>' +
+						'<span class="fm-toast-msg">' + mensaje + '</span>' +
+						'<button class="fm-toast-close" aria-label="Cerrar">' +
+							'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+						'</button>';
+
+					container.appendChild(toast);
+
+					function closeToast() {
+						toast.classList.add('closing');
+						setTimeout(function() { toast.remove(); }, 300);
+					}
+
+					toast.querySelector('.fm-toast-close').addEventListener('click', closeToast);
+
+					if (duracion > 0) {
+						setTimeout(closeToast, duracion);
+					}
+				};
+
+				// Reemplaza window.confirm con un modal custom.
+				// Uso: window.showConfirm('¿Seguro?', 'Texto botón OK').then(ok => { if(ok) {...} })
+				window.showConfirm = function(mensaje, btnOkTexto, btnOkColor) {
+					return new Promise(function(resolve) {
+						const modal = document.getElementById('confirm-modal');
+						const msgEl = document.getElementById('confirm-message');
+						const btnOk = document.getElementById('confirm-ok');
+						const btnCancel = document.getElementById('confirm-cancel');
+						if (!modal || !msgEl || !btnOk || !btnCancel) {
+							resolve(window.confirm(mensaje));
+							return;
+						}
+
+						msgEl.textContent = mensaje;
+						btnOk.textContent = btnOkTexto || 'Confirmar';
+						btnOk.style.background = btnOkColor || '#ef4444';
+						modal.style.display = 'flex';
+
+						function cleanup(result) {
+							modal.style.display = 'none';
+							btnOk.removeEventListener('click', onOk);
+							btnCancel.removeEventListener('click', onCancel);
+							resolve(result);
+						}
+						function onOk() { cleanup(true); }
+						function onCancel() { cleanup(false); }
+
+						btnOk.addEventListener('click', onOk);
+						btnCancel.addEventListener('click', onCancel);
+					});
+				};
+			})();
+		</script>
 	</body>
 </html>

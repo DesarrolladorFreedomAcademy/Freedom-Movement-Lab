@@ -28,6 +28,39 @@ try {
   // Si no hay video en BD, usamos los datos mockup
 }
 
+// Obtener detalles adicionales del instructor si tenemos el videoData
+let instructorRol = 'instructor';
+let instructorVideosCount = 0;
+let instructorAvatarUrl = null;
+
+if (videoData?.usuario_id) {
+  try {
+    const [perfilRes, videoCountRes] = await Promise.all([
+      supabase.from('perfiles').select('rol, avatar_url').eq('id', videoData.usuario_id).single(),
+      supabase.from('videos').select('id', { count: 'exact', head: true }).eq('usuario_id', videoData.usuario_id).eq('estado', 'listo')
+    ]);
+    if (perfilRes.data?.rol) instructorRol = perfilRes.data.rol;
+    if (perfilRes.data?.avatar_url) instructorAvatarUrl = perfilRes.data.avatar_url;
+    if (videoCountRes.count !== null) instructorVideosCount = videoCountRes.count;
+  } catch (e) {
+    console.error('Error al obtener datos adicionales del instructor:', e);
+  }
+}
+
+// Cargar categorías y dificultades dinámicamente para el modal de edición
+let categoriasAstro = [];
+let dificultadesAstro = [];
+try {
+  const [catData, difData] = await Promise.all([
+    supabase.from('categorias').select('nombre').order('orden', {ascending: true}),
+    supabase.from('dificultades').select('nombre').order('orden', {ascending: true})
+  ]);
+  categoriasAstro = catData.data || [];
+  dificultadesAstro = difData.data || [];
+} catch(e) {
+  console.error('Error cargando configs:', e);
+}
+
 const VIDEO_DATA = {
   id: videoData?.id || null,
   usuario_id: videoData?.usuario_id || null,
@@ -41,7 +74,7 @@ const VIDEO_DATA = {
   instructor: {
     name: videoData?.instructor || "Alex Freedom",
     title: "Lead Parkour Instructor • 128 Tutorials",
-    avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(videoData?.instructor || 'Alex Freedom')}&background=0F172A&color=fff`
+    avatar: instructorAvatarUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(videoData?.instructor || 'Alex Freedom')}&background=0F172A&color=fff`
   },
   thumbnail: videoData?.mux_playback_id 
     ? `https://image.mux.com/${videoData.mux_playback_id}/thumbnail.webp?time=${videoData.miniatura_segundo ?? 1}`
@@ -109,13 +142,7 @@ try {
       </svg>
     </a>
     <span class="font-bold text-base truncate mx-4 flex-grow text-center text-white">Freedom Movement</span>
-    <button class="text-white p-1 hover:bg-white/10 rounded-full transition-colors flex-shrink-0">
-      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-        <polyline points="16 6 12 2 8 6"></polyline>
-        <line x1="12" y1="2" x2="12" y2="15"></line>
-      </svg>
-    </button>
+    <div class="w-8 flex-shrink-0"></div>
   </div>
 
   <!-- Normal Desktop Nav (Hidden on Mobile) -->
@@ -132,7 +159,7 @@ try {
         <div class="w-full lg:w-2/3 xl:w-[70%] xl:shrink-0 flex flex-col">
           
           <!-- Contenedor del Reproductor -->
-          <div class="w-full relative bg-black aspect-video xl:rounded-2xl overflow-hidden shadow-2xl group border-b md:border border-white/5 shadow-black/50">
+          <div class="w-full relative bg-black aspect-video xl:rounded-2xl overflow-hidden shadow-2xl group border-b md:border border-white/5 shadow-black/50" id="player-wrapper">
             
             {VIDEO_DATA.muxPlaybackId ? (
               // Reproductor Mux real (cuando hay vídeo en la BD)
@@ -158,6 +185,50 @@ try {
                 <!-- Aviso Demo -->
                 <div class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur text-xs text-white/70 px-3 py-1.5 rounded-full whitespace-nowrap">
                   Vista previa · Añade vídeos reales desde Mux
+                </div>
+              </>
+            )}
+
+            <!-- Botones de salto: visibles solo al hacer hover en el lateral izquierdo/derecho -->
+            {VIDEO_DATA.muxPlaybackId && (
+              <>
+                <!-- Zona hover izquierda → -5s -->
+                <div class="group/left absolute left-0 top-0 w-1/3 h-full z-20 flex items-center justify-start pl-3 md:pl-5">
+                  <button
+                    id="btn-skip-back"
+                    title="Retroceder 5 segundos (←)"
+                    class="flex flex-col items-center gap-1 opacity-0 group-hover/left:opacity-100 transition-opacity duration-200"
+                  >
+                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-white/20 hover:scale-110 transition-all shadow-lg">
+                      <svg class="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3.51"/>
+                      </svg>
+                    </div>
+                    <span class="text-[10px] font-bold text-white/80 tracking-wide">-5s</span>
+                  </button>
+                </div>
+
+                <!-- Zona hover derecha → +5s -->
+                <div class="group/right absolute right-0 top-0 w-1/3 h-full z-20 flex items-center justify-end pr-3 md:pr-5">
+                  <button
+                    id="btn-skip-forward"
+                    title="Avanzar 5 segundos (→)"
+                    class="flex flex-col items-center gap-1 opacity-0 group-hover/right:opacity-100 transition-opacity duration-200"
+                  >
+                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center text-white hover:bg-white/20 hover:scale-110 transition-all shadow-lg">
+                      <svg class="w-5 h-5 md:w-6 md:h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-.49-3.51"/>
+                      </svg>
+                    </div>
+                    <span class="text-[10px] font-bold text-white/80 tracking-wide">+5s</span>
+                  </button>
+                </div>
+
+                <!-- Toast de skip (feedback visual) -->
+                <div id="skip-toast" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none opacity-0 transition-opacity duration-150">
+                  <div class="bg-black/70 backdrop-blur-sm text-white font-bold text-sm px-4 py-2 rounded-full border border-white/10">
+                    <span id="skip-toast-text"></span>
+                  </div>
                 </div>
               </>
             )}
@@ -197,20 +268,40 @@ try {
             <!-- En móvil el botón de seguir es grande, en PC es discreto a la derecha -->
             <div class="bg-[#111C2A] md:bg-transparent border border-white/5 md:border-none p-4 md:p-0 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 md:mb-8" data-instructor-name={VIDEO_DATA.instructor.name}>
               <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-full overflow-hidden border border-[#00A3FF]/30 p-0.5 bg-[#111C2A]">
+                <div class={`w-12 h-12 rounded-full overflow-hidden border-[2px] p-0.5 bg-[#111C2A] ${instructorRol === 'admin' ? 'border-[#EAB308] shadow-[0_0_15px_rgba(234,179,8,0.3)]' : 'border-[#00A3FF] shadow-[0_0_15px_rgba(0,163,255,0.3)]'}`}>
                   <img src={VIDEO_DATA.instructor.avatar} alt={VIDEO_DATA.instructor.name} class="w-full h-full object-cover rounded-full" />
                 </div>
                 <div>
                   <h3 class="font-bold text-white text-base leading-tight md:text-lg">{VIDEO_DATA.instructor.name}</h3>
-                  <p class="text-[11px] md:text-sm text-slate-400 font-medium uppercase md:normal-case tracking-widest md:tracking-normal">{VIDEO_DATA.instructor.title}</p>
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class={`text-[10px] md:text-xs font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${instructorRol === 'admin' ? 'bg-[#EAB308]/20 text-[#EAB308]' : 'bg-[#00A3FF]/20 text-[#00A3FF]'}`}>
+                      {instructorRol === 'admin' ? 'Admin' : 'Coach'}
+                    </span>
+                    <span class="text-[11px] md:text-sm text-slate-400 font-medium tracking-wide">
+                      • {instructorVideosCount} {instructorVideosCount === 1 ? 'vídeo' : 'vídeos'}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <button class="btn-follow-instructor md:hidden w-full text-center py-2 bg-transparent border border-white/10 hover:border-white/20 rounded-xl text-sm font-bold text-white transition-all" data-instructor={VIDEO_DATA.instructor.name}>
-                <span class="follow-text">Seguir</span>
-              </button>
-              <button class="btn-follow-instructor hidden md:flex items-center gap-2 px-6 py-2 border border-[#334155] hover:bg-[#334155] rounded-full text-sm font-bold text-white transition-all" data-instructor={VIDEO_DATA.instructor.name}>
-                <span class="follow-text">Seguir</span>
-              </button>
+              <!-- Botones móvil: Añadir a lista + Seguir -->
+              <div class="flex md:hidden gap-2 w-full">
+                <button class="btn-add-to-list-player flex-1 flex items-center justify-center gap-2 py-2 bg-transparent border border-white/10 hover:border-[#00A3FF]/50 hover:bg-[#00A3FF]/10 rounded-xl text-sm font-bold text-slate-300 hover:text-[#00A3FF] transition-all" id="btn-add-to-list-mobile">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                  <span class="add-list-text">Añadir a lista</span>
+                </button>
+                <button class="btn-follow-instructor flex-1 text-center py-2 bg-transparent border border-white/10 hover:border-white/20 rounded-xl text-sm font-bold text-white transition-all" data-instructor={VIDEO_DATA.instructor.name}>
+                  <span class="follow-text">Seguir</span>
+                </button>
+              </div>
+              <div class="hidden md:flex items-center gap-3">
+                <button class="btn-add-to-list-player flex items-center gap-2 px-4 py-2 border border-white/10 hover:border-[#00A3FF]/50 hover:bg-[#00A3FF]/10 rounded-full text-sm font-bold text-slate-300 hover:text-[#00A3FF] transition-all" id="btn-add-to-list-desktop">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                  <span class="add-list-text">Añadir a lista</span>
+                </button>
+                <button class="btn-follow-instructor flex items-center gap-2 px-6 py-2 border border-[#334155] hover:bg-[#334155] rounded-full text-sm font-bold text-white transition-all" data-instructor={VIDEO_DATA.instructor.name}>
+                  <span class="follow-text">Seguir</span>
+                </button>
+              </div>
             </div>
             
             <!-- Botón Completado gigante exclusivo Mobile removido -->
@@ -308,17 +399,58 @@ try {
         <label class="text-sm font-semibold text-slate-400">Título</label>
         <input type="text" name="titulo" class="bg-[#1E293B] border border-white/5 p-3 rounded-lg focus:outline-none focus:border-[#008AE6] transition-colors" value={VIDEO_DATA.title} required>
       </div>
+      <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex flex-col gap-2 flex-1">
+          <label class="text-sm font-semibold text-slate-400">Categoría</label>
+          <select name="categoria" class="bg-[#1E293B] border border-white/5 p-3 rounded-lg focus:outline-none focus:border-[#008AE6] transition-colors appearance-none">
+            {categoriasAstro.map(cat => (
+              <option value={cat.nombre} selected={videoData?.categoria === cat.nombre}>{cat.nombre}</option>
+            ))}
+          </select>
+        </div>
+        <div class="flex flex-col gap-2 flex-1">
+          <label class="text-sm font-semibold text-slate-400">Dificultad</label>
+          <select name="dificultad" class="bg-[#1E293B] border border-white/5 p-3 rounded-lg focus:outline-none focus:border-[#008AE6] transition-colors appearance-none">
+            {dificultadesAstro.map(dif => (
+              <option value={dif.nombre} selected={videoData?.dificultad === dif.nombre}>{dif.nombre}</option>
+            ))}
+          </select>
+        </div>
+      </div>
       <div class="flex flex-col gap-2">
         <label class="text-sm font-semibold text-slate-400">Descripción (Añade capítulos ej: "00:00 Intro")</label>
         <textarea name="descripcion" class="bg-[#1E293B] border border-white/5 p-3 rounded-lg min-h-[150px] focus:outline-none focus:border-[#008AE6] transition-colors text-sm">{VIDEO_DATA.description}</textarea>
       </div>
       <div class="flex gap-4 mt-4 justify-end">
         <button type="button" id="btn-close-modal" class="px-4 py-2 text-slate-400 hover:text-white transition-colors text-sm font-semibold">Cancelar</button>
-        <button type="submit" class="btn-primary px-6 py-2 rounded-xl text-sm font-bold">Guardar Cambios</button>
+        <button type="submit" id="btn-save-edit" class="btn-primary px-6 py-2 rounded-xl text-sm font-bold flex items-center gap-2">Guardar Cambios</button>
       </div>
     </form>
   </dialog>
 </Layout>
+
+<!-- Modal: Debes iniciar sesión para seguir -->
+<dialog id="follow-login-modal" class="bg-[#0b1016] text-white border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-xl w-[90%] max-w-[400px] m-auto">
+  <div class="flex flex-col items-center text-center">
+    <div class="w-14 h-14 rounded-full bg-[#00A3FF]/10 border border-[#00A3FF]/20 flex items-center justify-center mb-4">
+      <svg class="w-7 h-7 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+      </svg>
+    </div>
+    <h2 class="text-xl font-black text-white mb-2">Debes iniciar sesión</h2>
+    <p class="text-slate-400 text-sm font-medium max-w-xs mx-auto mb-7">Para seguir a este instructor y recibir notificaciones de su contenido necesitas una cuenta.</p>
+    <div class="flex flex-col sm:flex-row gap-3 w-full">
+      <a href="/login" class="btn-primary px-6 py-3 font-bold flex items-center gap-2 justify-center flex-1">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Continuar
+      </a>
+      <button id="btn-close-follow-modal" class="px-6 py-3 rounded-full border border-white/10 hover:border-white/20 text-slate-300 hover:text-white font-semibold transition-colors flex-1">
+        En otro momento
+      </button>
+    </div>
+  </div>
+</dialog>
 
 <style is:global>
   dialog::backdrop {
@@ -346,6 +478,82 @@ try {
   // Script para manejar los capítulos interactivos y el evento del `<mux-player>`
   const player = document.querySelector('mux-player') as any;
   const chapterBtns = document.querySelectorAll('.chapter-btn');
+
+  // ====================================================================
+  // CONTROLES DE SALTO DEL VÍDEO (← / →) Y NAVEGACIÓN (Alt+← / Alt+→)
+  // ====================================================================
+  const SKIP_SECONDS = 5;
+  const SKIP_CTRL_SECONDS = 10;
+
+  // Lista de vídeos de la playlist activa (colección o "Siguiente")
+  // Se rellena más abajo por cargarColaColeccion o por los links del DOM
+  let playlistVideos: { id: string; href: string }[] = [];
+
+  function showSkipToast(msg: string) {
+    const toast = document.getElementById('skip-toast');
+    const text = document.getElementById('skip-toast-text');
+    if (!toast || !text) return;
+    text.textContent = msg;
+    toast.style.opacity = '1';
+    clearTimeout((toast as any)._timer);
+    (toast as any)._timer = setTimeout(() => { toast.style.opacity = '0'; }, 900);
+  }
+
+  function skipVideo(seconds: number) {
+    if (!player) return;
+    const newTime = Math.max(0, Math.min(player.currentTime + seconds, player.duration || Infinity));
+    player.currentTime = newTime;
+    showSkipToast(seconds > 0 ? `+${seconds}s` : `${seconds}s`);
+  }
+
+  function navigateVideo(direction: 'next' | 'prev') {
+    if (playlistVideos.length === 0) return;
+    const currentId = new URLSearchParams(window.location.search).get('id');
+    const currentIndex = playlistVideos.findIndex(v => v.id === currentId);
+    const targetIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+    if (targetIndex < 0 || targetIndex >= playlistVideos.length) return;
+    window.location.href = playlistVideos[targetIndex].href;
+  }
+
+  // Botones de overlay (+/-5s)
+  document.getElementById('btn-skip-back')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    skipVideo(-SKIP_SECONDS);
+  });
+  document.getElementById('btn-skip-forward')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    skipVideo(SKIP_SECONDS);
+  });
+
+  // Atajos de teclado
+  document.addEventListener('keydown', (e) => {
+    const tag = (e.target as HTMLElement).tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return;
+
+    // Alt+→ / Alt+← → navegar al vídeo siguiente / anterior
+    if (e.altKey && e.key === 'ArrowRight') {
+      e.preventDefault();
+      navigateVideo('next');
+      return;
+    }
+    if (e.altKey && e.key === 'ArrowLeft') {
+      e.preventDefault();
+      navigateVideo('prev');
+      return;
+    }
+
+    // → / ← (sin Alt) → saltar segundos dentro del vídeo
+    if (!player) return;
+    if (e.key === 'ArrowRight' && !e.altKey) {
+      e.preventDefault();
+      skipVideo(e.ctrlKey ? SKIP_CTRL_SECONDS : SKIP_SECONDS);
+    } else if (e.key === 'ArrowLeft' && !e.altKey) {
+      e.preventDefault();
+      skipVideo(e.ctrlKey ? -SKIP_CTRL_SECONDS : -SKIP_SECONDS);
+    }
+  });
 
   if (chapterBtns.length > 0) {
     // 1. Clickeo en el capítulo te lleva a ese tiempo
@@ -416,7 +624,8 @@ try {
     });
 
     btnDelete?.addEventListener('click', async () => {
-      if (confirm('¿Estás seguro de que quieres eliminar este vídeo permanentemente? Esta acción también borrará el vídeo de Mux.')) {
+    const confirmed = await window.showConfirm?.('¿Estás seguro de que quieres eliminar este vídeo permanentemente? Esta acción también borrará el vídeo de Mux.', 'Eliminar vídeo') ?? false;
+      if (confirmed) {
         const originalText = btnDelete.textContent;
         (btnDelete as HTMLButtonElement).disabled = true;
         btnDelete.textContent = 'Eliminando...';
@@ -437,14 +646,14 @@ try {
           const result = await res.json();
 
           if (!res.ok) {
-            alert('Error eliminando vídeo: ' + (result.error || res.statusText));
+            window.showToast?.('Error eliminando vídeo: ' + (result.error || res.statusText), 'error');
             (btnDelete as HTMLButtonElement).disabled = false;
             btnDelete.textContent = originalText;
           } else {
             window.location.href = '/catalogo';
           }
         } catch (err: any) {
-          alert('Error de red: ' + err.message);
+          window.showToast?.('Error de red: ' + err.message, 'error');
           (btnDelete as HTMLButtonElement).disabled = false;
           btnDelete.textContent = originalText;
         }
@@ -461,17 +670,32 @@ try {
 
     editForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
+      
+      const submitBtn = document.getElementById('btn-save-edit') as HTMLButtonElement;
+      const originalText = submitBtn.textContent;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Guardando...';
+
       const fd = new FormData(editForm);
       const title = fd.get('titulo');
       const desc = fd.get('descripcion');
+      const cat = fd.get('categoria');
+      const dif = fd.get('dificultad');
       
       const { error } = await supabase
         .from('videos')
-        .update({ titulo: title, descripcion: desc })
+        .update({ 
+          titulo: title, 
+          descripcion: desc,
+          categoria: cat,
+          dificultad: dif
+        })
         .eq('id', videoId);
         
       if (error) {
-        alert('Error actualizando vídeo: ' + error.message);
+        window.showToast?.('Error actualizando vídeo: ' + error.message, 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
       } else {
         window.location.reload();
       }
@@ -671,22 +895,22 @@ try {
     if (!instructorName) return;
 
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return;
+    const userId = session?.user?.id;
 
-    const userId = session.user.id;
+    // Comprobar si ya sigue al instructor (solo si hay sesión)
+    if (userId) {
+      try {
+        const { data } = await supabase
+          .from('seguimientos')
+          .select('id')
+          .eq('usuario_id', userId)
+          .eq('instructor_nombre', instructorName)
+          .single();
 
-    // Comprobar si ya sigue al instructor
-    try {
-      const { data } = await supabase
-        .from('seguimientos')
-        .select('id')
-        .eq('usuario_id', userId)
-        .eq('instructor_nombre', instructorName)
-        .single();
-
-      if (data) updateFollowUI(true);
-    } catch (e) {
-      // No lo sigue o tabla no existe, mantener estado por defecto
+        if (data) updateFollowUI(true);
+      } catch (e) {
+        // No lo sigue o tabla no existe, mantener estado por defecto
+      }
     }
 
     // Event listeners para los botones
@@ -694,7 +918,9 @@ try {
       btn.addEventListener('click', async () => {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (!currentSession?.user) {
-          window.location.href = '/login';
+          // Mostrar modal personalizado en lugar de redirigir
+          const followModal = document.getElementById('follow-login-modal') as HTMLDialogElement;
+          followModal?.showModal();
           return;
         }
 
@@ -739,7 +965,330 @@ try {
 
   initFollowState();
 
+  // Cerrar modal de follow
+  document.getElementById('btn-close-follow-modal')?.addEventListener('click', () => {
+    (document.getElementById('follow-login-modal') as HTMLDialogElement)?.close();
+  });
+
   // Iniciar al cargar
   initTracking();
+
+  // ====================================================================
+  // PANEL DE COLECCIONES — "Añadir a lista"
+  // ====================================================================
+  const panelHtmlR = `
+    <div id="col-panel-r" style="display:none;position:fixed;inset:0;z-index:8000;" onclick="document.getElementById('col-panel-r').style.display='none'">
+      <div id="col-panel-r-inner" style="position:absolute;background:#111C2A;border:1px solid rgba(255,255,255,0.12);border-radius:1rem;padding:1.25rem;width:280px;box-shadow:0 16px 48px rgba(0,0,0,0.8);max-height:400px;overflow-y:auto;" onclick="event.stopPropagation()">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <span style="font-size:0.875rem;font-weight:700;color:#f1f5f9;">Añadir a colección</span>
+          <button onclick="document.getElementById('col-panel-r').style.display='none'" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:1.25rem;line-height:1;">&#215;</button>
+        </div>
+        <div id="col-panel-r-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:0.75rem;"></div>
+        <div style="border-top:1px solid rgba(255,255,255,0.06);padding-top:0.75rem;display:flex;gap:8px;">
+          <input id="col-panel-r-input" type="text" maxlength="60" placeholder="Nueva colección..." style="flex:1;background:#1E293B;border:1px solid rgba(255,255,255,0.08);color:white;padding:8px 12px;border-radius:8px;font-size:0.8125rem;outline:none;">
+          <button id="col-panel-r-create" style="background:#00A3FF;color:white;border:none;border-radius:8px;padding:8px 12px;font-size:0.8125rem;font-weight:700;cursor:pointer;">Crear</button>
+        </div>
+        <p id="col-panel-r-error" style="display:none;font-size:0.75rem;color:#f87171;margin-top:6px;font-weight:600;"></p>
+      </div>
+    </div>
+  `;
+  document.body.insertAdjacentHTML('beforeend', panelHtmlR);
+
+  let rPanelColecciones: any[] = [];
+  let rPanelUserId: string | null = null;
+  const rVideoId = document.getElementById('video-owner-controls')?.getAttribute('data-video-id') || null;
+
+  // Obtener userId
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) {
+      rPanelUserId = session.user.id;
+      // Si hay colección en URL, cargar cola
+      const urlParams = new URLSearchParams(window.location.search);
+      const coleccionId = urlParams.get('coleccion');
+      if (coleccionId) cargarColaColeccion(coleccionId);
+    }
+  });
+
+  async function abrirPanelColeccionReproductor(btn: HTMLElement) {
+    if (!rVideoId) return;
+    if (!rPanelUserId) {
+      window.showToast?.('Inicia sesión para gestionar colecciones.', 'warning');
+      return;
+    }
+
+    const panel = document.getElementById('col-panel-r')!;
+    const panelInner = document.getElementById('col-panel-r-inner')!;
+    const rect = btn.getBoundingClientRect();
+    const scrollY = window.scrollY;
+    let top = rect.bottom + scrollY + 8;
+    let left = rect.left;
+    if (left + 280 > window.innerWidth - 16) left = window.innerWidth - 296;
+    const panelHeight = 400;
+    const viewportBottom = scrollY + window.innerHeight - 16;
+    if (top + panelHeight > viewportBottom) {
+      top = Math.max(scrollY + 16, rect.top + scrollY - panelHeight - 8);
+    }
+    panelInner.style.top = top + 'px';
+    panelInner.style.left = left + 'px';
+
+    const lista = document.getElementById('col-panel-r-lista')!;
+    lista.innerHTML = '<span style="color:#64748b;font-size:0.8125rem;">Cargando...</span>';
+    panel.style.display = 'block';
+
+    try {
+      const { data: cols, error } = await supabase
+        .from('colecciones')
+        .select('id, nombre, coleccion_videos!left(video_id, orden)')
+        .eq('usuario_id', rPanelUserId)
+        .order('nombre');
+
+      if (error) throw error;
+      rPanelColecciones = cols || [];
+
+      if (rPanelColecciones.length === 0) {
+        lista.innerHTML = '<span style="color:#64748b;font-size:0.8125rem;">No tienes colecciones. Crea una abajo.</span>';
+      } else {
+        lista.innerHTML = rPanelColecciones.map(col => {
+          const yaEsta = (col.coleccion_videos || []).some((cv: any) => cv.video_id === rVideoId);
+          return `
+            <button class="col-panel-r-item" data-col-id="${col.id}" data-ya-esta="${yaEsta}"
+              style="display:flex;align-items:center;justify-content:space-between;width:100%;
+              background:${yaEsta ? 'rgba(0,163,255,0.1)' : 'rgba(255,255,255,0.03)'};
+              border:1px solid ${yaEsta ? 'rgba(0,163,255,0.3)' : 'rgba(255,255,255,0.06)'};
+              border-radius:8px;padding:9px 12px;
+              color:${yaEsta ? '#00A3FF' : '#cbd5e1'};
+              font-size:0.8125rem;font-weight:600;cursor:pointer;text-align:left;transition:all 0.15s;">
+              <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${col.nombre}</span>
+              ${yaEsta
+                ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>'
+                : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:0.4;"><path d="M5 12h14"/><path d="M12 5v14"/></svg>'
+              }
+            </button>
+          `;
+        }).join('');
+
+        document.querySelectorAll('.col-panel-r-item').forEach(item => {
+          item.addEventListener('click', async () => {
+            const colId = (item as HTMLElement).getAttribute('data-col-id')!;
+            const yaEsta = (item as HTMLElement).getAttribute('data-ya-esta') === 'true';
+            const colNombre = rPanelColecciones.find(c => c.id === colId)?.nombre || '';
+
+            if (yaEsta) {
+              const { error } = await supabase.from('coleccion_videos')
+                .delete().eq('coleccion_id', colId).eq('video_id', rVideoId!);
+              if (!error) {
+                window.showToast?.(`Quitado de "${colNombre}".`, 'info');
+                updateAddListBtn(false);
+              } else {
+                window.showToast?.('Error al quitar el vídeo.', 'error');
+              }
+            } else {
+              const ordenes = (rPanelColecciones.find(c => c.id === colId)?.coleccion_videos || [])
+                .map((cv: any) => Number(cv.orden))
+                .filter((n: number) => Number.isFinite(n));
+              const maxOrden = ordenes.length > 0 ? Math.max(...ordenes) : 0;
+              const { error } = await supabase.from('coleccion_videos').insert({
+                coleccion_id: colId, video_id: rVideoId!, orden: maxOrden + 1
+              });
+              if (!error) {
+                window.showToast?.(`Añadido a "${colNombre}".`, 'success');
+                updateAddListBtn(true);
+              } else {
+                window.showToast?.('Error al añadir el vídeo.', 'error');
+              }
+            }
+            panel.style.display = 'none';
+          });
+        });
+      }
+    } catch(e) {
+      lista.innerHTML = '<span style="color:#f87171;font-size:0.8125rem;">Error al cargar colecciones.</span>';
+    }
+  }
+
+  function updateAddListBtn(enAlgunaLista: boolean) {
+    const btn = document.getElementById('btn-add-to-list-desktop');
+    const textEl = btn?.querySelector('.add-list-text');
+    if (!btn || !textEl) return;
+    if (enAlgunaLista) {
+      btn.classList.add('!border-emerald-500/40', '!text-emerald-400', '!bg-emerald-500/10');
+      textEl.textContent = '✓ En tu lista';
+    } else {
+      btn.classList.remove('!border-emerald-500/40', '!text-emerald-400', '!bg-emerald-500/10');
+      textEl.textContent = 'Añadir a lista';
+    }
+  }
+
+  // Inicializar estado del botón "Añadir a lista"
+  async function initAddListState() {
+    if (!rVideoId || !rPanelUserId) return;
+    try {
+      const { data } = await supabase
+        .from('coleccion_videos')
+        .select('id')
+        .eq('video_id', rVideoId)
+        .limit(1);
+      if (data && data.length > 0) updateAddListBtn(true);
+    } catch(e) { /* silencioso */ }
+  }
+
+  // Listener del botón "Añadir a lista" (desktop)
+  document.getElementById('btn-add-to-list-desktop')?.addEventListener('click', function() {
+    abrirPanelColeccionReproductor(this as HTMLElement);
+  });
+
+  // Listener del botón "Añadir a lista" (mobile)
+  document.getElementById('btn-add-to-list-mobile')?.addEventListener('click', function() {
+    abrirPanelColeccionReproductor(this as HTMLElement);
+  });
+
+  // Crear colección desde el panel del reproductor
+  document.getElementById('col-panel-r-create')?.addEventListener('click', async () => {
+    if (!rPanelUserId) return;
+    const input = document.getElementById('col-panel-r-input') as HTMLInputElement;
+    const errorEl = document.getElementById('col-panel-r-error')!;
+    const nombre = input.value.trim();
+    if (!nombre) return;
+
+    const norm = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const existe = rPanelColecciones.some(c => norm(c.nombre) === norm(nombre));
+    if (existe) {
+      errorEl.textContent = 'Ya tienes una colección con ese nombre.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+
+    const { data, error } = await supabase.from('colecciones')
+      .insert({ usuario_id: rPanelUserId, nombre }).select().single();
+
+    if (error) { window.showToast?.('Error al crear la colección.', 'error'); return; }
+
+    if (rVideoId && data?.id) {
+      await supabase.from('coleccion_videos').insert({ coleccion_id: data.id, video_id: rVideoId, orden: 0 });
+      window.showToast?.(`Colección "${nombre}" creada y vídeo añadido.`, 'success');
+      updateAddListBtn(true);
+    } else {
+      window.showToast?.(`Colección "${nombre}" creada.`, 'success');
+    }
+    input.value = '';
+    document.getElementById('col-panel-r')!.style.display = 'none';
+  });
+
+  // Iniciar estado del botón después de tener userId
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user) initAddListState();
+  });
+
+  // ====================================================================
+  // COLA DE REPRODUCCIÓN DE COLECCIÓN
+  // ====================================================================
+  async function cargarColaColeccion(coleccionId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('coleccion_videos')
+        .select('orden, videos!inner(id, titulo, instructor, dificultad, mux_playback_id, miniatura_segundo)')
+        .eq('coleccion_id', coleccionId)
+        .order('orden');
+
+      if (error || !data || data.length === 0) return;
+
+      const videos = data.map((cv: any) => cv.videos).filter(Boolean);
+      const contenedor = document.querySelector('.w-full.lg\\:w-1\\/3.xl\\:w-\\[30\\%\\]') as HTMLElement | null;
+      if (!contenedor) return;
+
+      // Buscar el div de "Siguiente" y reemplazarlo con la cola de la colección
+      const nextDiv = contenedor.querySelector('.mt-2');
+      if (nextDiv) nextDiv.remove();
+
+      // Obtener el índice del vídeo actual
+      const actualId = rVideoId;
+      const currentIndex = videos.findIndex((v: any) => v.id === actualId);
+
+      // Exponer la playlist para la navegación por teclado (Alt+←/→)
+      playlistVideos = videos.map((v: any) => ({
+        id: v.id,
+        href: `/reproductor?id=${v.id}&coleccion=${coleccionId}`
+      }));
+
+      // Crear panel de cola
+      const colaDiv = document.createElement('div');
+      colaDiv.className = 'mt-2';
+      colaDiv.innerHTML = `
+        <div class="flex justify-between items-end mb-5">
+          <div>
+            <h2 class="text-xl md:text-lg font-bold text-white">Cola de Colección</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Reproduciendo en orden</p>
+          </div>
+          <a href="/entrenamiento" class="text-xs font-semibold text-slate-500 hover:text-[#00A3FF] transition-colors">Ver colecciones</a>
+        </div>
+        <div class="flex flex-col gap-3">
+          ${videos.map((video: any, i: number) => {
+            const thumb = video.mux_playback_id
+              ? `https://image.mux.com/${video.mux_playback_id}/thumbnail.webp?time=${video.miniatura_segundo ?? 1}&width=200`
+              : 'https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=400&auto=format&fit=crop';
+            const isActual = video.id === actualId;
+            const siguiente = i === currentIndex + 1;
+
+            return `
+              <a href="/reproductor?id=${video.id}&coleccion=${coleccionId}"
+                class="flex gap-3 group cursor-pointer hover:bg-white/5 p-2 -mx-2 rounded-xl transition-colors ${isActual ? 'bg-[#00A3FF]/5 border border-[#00A3FF]/20 rounded-xl' : ''}">
+                <div class="w-[120px] flex-shrink-0 aspect-video rounded-lg overflow-hidden relative border border-white/5 shadow-md">
+                  <img src="${thumb}" alt="${video.titulo}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  ${isActual ? '<div class="absolute inset-0 bg-[#00A3FF]/20 flex items-center justify-center"><div class="w-6 h-6 bg-[#00A3FF] rounded-full flex items-center justify-center"><svg class="w-3 h-3 fill-white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>' : ''}
+                </div>
+                <div class="flex flex-col justify-center min-w-0">
+                  ${siguiente ? '<span class="text-[10px] font-bold text-[#00A3FF] uppercase tracking-wider mb-0.5">Siguiente</span>' : ''}
+                  ${isActual ? '<span class="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-0.5">▶ Reproduciendo</span>' : ''}
+                  <h3 class="text-sm font-bold text-slate-100 leading-tight mb-1 group-hover:text-[#00A3FF] transition-colors line-clamp-2 ${isActual ? 'text-white' : ''}">${video.titulo}</h3>
+                  <span class="text-xs text-slate-400 font-medium">${video.instructor || 'Freedom Lab'}</span>
+                </div>
+              </a>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      contenedor.appendChild(colaDiv);
+
+      // Auto-avanzar al siguiente vídeo cuando termine el actual
+      if (player && currentIndex >= 0 && currentIndex < videos.length - 1) {
+        const siguienteVideo = videos[currentIndex + 1];
+        player.addEventListener('ended', () => {
+          window.location.href = `/reproductor?id=${siguienteVideo.id}&coleccion=${coleccionId}`;
+        }, { once: true });
+      }
+    } catch(e) {
+      console.error('Error cargando cola de colección:', e);
+    }
+  }
+
+  // Inicializar playlist para modo normal ("Siguiente") cuando no hay colección
+  // Los links ya están en el DOM: leemos los <a> del panel de siguiente vídeos
+  function initPlaylistFromDOM() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('coleccion')) return; // La cola de colección se gestiona en cargarColaColeccion
+    const currentId = urlParams.get('id') || '';
+    // Los vídeos "Siguiente" tienen href /reproductor?id=...
+    const links = Array.from(document.querySelectorAll('a[href^="/reproductor?id="]')) as HTMLAnchorElement[];
+    if (links.length === 0) return;
+    // Construir playlist: vídeo actual primero, luego los siguientes
+    const nextItems = links
+      .map(a => ({ id: new URLSearchParams(a.href.split('?')[1]).get('id') || '', href: a.href }))
+      .filter(v => v.id);
+    // Poner el vídeo actual como primer elemento si no está
+    if (currentId && !nextItems.find(v => v.id === currentId)) {
+      playlistVideos = [{ id: currentId, href: window.location.href }, ...nextItems];
+    } else {
+      playlistVideos = nextItems;
+    }
+  }
+
+  // Esperar a que el DOM esté listo para leer los links
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPlaylistFromDOM);
+  } else {
+    initPlaylistFromDOM();
+  }
 
 </script>

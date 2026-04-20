@@ -1,11 +1,23 @@
 @import "tailwindcss";
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   background-color: #0F172A;
   /* Slate 900 */
   color: #F8FAFC;
   /* Slate 50 */
+  overflow-x: hidden;
+  max-width: 100%;
+  position: relative;
 }
 
 /* Base custom classes in pure CSS to avoid any @apply issues in build */

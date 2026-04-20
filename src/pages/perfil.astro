@@ -83,8 +83,7 @@ const PROGRESO_HABILIDADES = [
     .ticker-container {
       display: flex;
       align-items: center;
-      max-width: 1200px;
-      margin: 0 auto;
+      width: 100%;
       height: 44px;
     }
     /* Badge EN VIVO */
@@ -212,8 +211,71 @@ const PROGRESO_HABILIDADES = [
   
   <main class="w-full min-h-screen pb-20 mt-8">
     <div class="container mx-auto px-8 max-w-[1200px] animate-fade-in">
-      
-      <!-- User Info Header Card -->
+
+      <!-- ===== ESTADO: SIN SESIÓN ===== -->
+      <div id="no-session-profile" class="flex flex-col items-center justify-center py-24 text-center">
+        <div class="relative mb-8">
+          <!-- Avatar vacío -->
+          <div class="w-28 h-28 rounded-full bg-gradient-to-tr from-slate-700 to-slate-600 p-1 shadow-xl">
+            <div class="w-full h-full bg-[#0F172A] rounded-full flex items-center justify-center">
+              <svg class="w-12 h-12 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+          </div>
+          <!-- Candado -->
+          <div class="absolute -bottom-2 -right-2 w-10 h-10 rounded-full bg-[#00A3FF] flex items-center justify-center shadow-[0_0_20px_rgba(0,163,255,0.4)]">
+            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+        </div>
+
+        <h1 class="text-3xl md:text-4xl font-black text-white mb-3">Tu perfil te espera</h1>
+        <p class="text-slate-400 font-medium max-w-lg mx-auto mb-2">Inicia sesión para acceder a tu espacio personal.</p>
+        <p class="text-slate-500 text-sm max-w-md mx-auto mb-10">Con una cuenta podrás seguir tu progreso, desbloquear logros, ver tu historial de entrenamiento y mucho más.</p>
+
+        <!-- Ventajas -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-10">
+          <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-5 text-center">
+            <div class="w-10 h-10 rounded-full bg-[#00A3FF]/10 flex items-center justify-center mx-auto mb-3">
+              <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <h3 class="font-bold text-white text-sm mb-1">Historial de Progreso</h3>
+            <p class="text-slate-500 text-xs">Lleva la cuenta de cada vídeo que has completado.</p>
+          </div>
+          <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-5 text-center">
+            <div class="w-10 h-10 rounded-full bg-[#00A3FF]/10 flex items-center justify-center mx-auto mb-3">
+              <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M19 4H5c-1.1 0-2 .9-2 2v4c0 4.4 3.6 8 8 8s8-3.6 8-8V6c0-1.1-.9-2-2-2z"/></svg>
+            </div>
+            <h3 class="font-bold text-white text-sm mb-1">Logros y Retos</h3>
+            <p class="text-slate-500 text-xs">Desbloquea insignias a medida que superas desafíos.</p>
+          </div>
+          <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-5 text-center">
+            <div class="w-10 h-10 rounded-full bg-[#00A3FF]/10 flex items-center justify-center mx-auto mb-3">
+              <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h3 class="font-bold text-white text-sm mb-1">Estadísticas Reales</h3>
+            <p class="text-slate-500 text-xs">Horas de entrenamiento, racha semanal y más.</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-3">
+          <a href="/login" class="btn-primary px-10 py-3.5 font-bold flex items-center gap-2 justify-center text-base">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Iniciar Sesión
+          </a>
+          <a href="/catalogo" class="px-10 py-3.5 rounded-full border border-white/10 hover:border-white/20 text-white font-semibold transition-colors flex items-center gap-2 justify-center text-base">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Explorar Catálogo
+          </a>
+        </div>
+      </div>
+
+      <!-- ===== CONTENIDO AUTENTICADO (oculto por defecto) ===== -->
+      <div id="authenticated-profile" class="hidden">
       <section id="profile-header-card" class="bg-[#111C2A] border border-white/5 rounded-3xl p-8 mb-8 flex flex-col md:flex-row items-center justify-between shadow-xl shadow-black/20 transition-all duration-500">
         <div class="flex items-center gap-6">
           <div class="relative">
@@ -276,28 +338,7 @@ const PROGRESO_HABILIDADES = [
           </div>
         </div>
 
-        <!-- Habilidades Dominadas -->
-        <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-white/10 transition-colors">
-          <svg class="absolute right-[-10px] top-[-10px] w-32 h-32 text-slate-800/30 group-hover:text-slate-700/30 transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-
-          <h3 class="text-xs font-bold text-slate-400 tracking-wider mb-2 relative z-10">HABILIDADES DOMINADAS</h3>
-          <div class="flex items-baseline gap-1 relative z-10">
-            <span class="text-5xl font-black text-white">{user.skills.mastered}</span>
-            <span class="text-2xl font-bold text-slate-500">/{user.skills.total}</span>
-          </div>
-          
-          <div class="mt-4 flex items-center justify-between relative z-10">
-             <span class="text-sm font-semibold text-[#00A3FF]">+{Math.round((user.skills.mastered / user.skills.total) * 100)}% Completado</span>
-             <!-- Circular Progress Mock -->
-             <div class="relative w-12 h-12 flex items-center justify-center">
-               <svg class="w-full h-full transform -rotate-90">
-                 <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" fill="transparent" class="text-slate-700" />
-                 <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" fill="transparent" class="text-[#00A3FF]" stroke-dasharray="125" stroke-dashoffset={125 - (125 * 0.75)} stroke-linecap="round" />
-               </svg>
-               <span class="absolute text-[10px] font-bold text-white">75%</span>
-             </div>
-          </div>
-        </div>
+        <!-- Habilidades Dominadas — OCULTO temporalmente -->
 
         <!-- Racha Semanal -->
         <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-6 relative overflow-hidden group hover:border-white/10 transition-colors">
@@ -326,83 +367,30 @@ const PROGRESO_HABILIDADES = [
         </div>
       </section>
 
-      <!-- Grid 2 cols for Logros y Historial -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
-        
-        <!-- Mis Logros -->
-        <div>
-          <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-              <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M19 4H5c-1.1 0-2 .9-2 2v4c0 4.4 3.6 8 8 8s8-3.6 8-8V6c0-1.1-.9-2-2-2z"/></svg>
-              Mis Logros
-            </h2>
-            <a href="#" class="text-sm font-semibold text-[#00A3FF] hover:text-[#00E5FF] transition-colors">Ver Todo</a>
-          </div>
 
-          <div class="grid grid-cols-3 gap-4">
-            {LOGROS.map((logro) => (
-              <div class={`flex flex-col items-center justify-center p-4 rounded-2xl border transition-all cursor-pointer ${logro.unlocked ? 'bg-[#111C2A] border-[#00A3FF]/20 hover:border-[#00A3FF]/50 shadow-lg shadow-[#00A3FF]/5' : 'bg-[#0F172A] border-white/5 opacity-60 grayscale hover:grayscale-0 hover:opacity-100'}`}>
-                 <div class={`w-14 h-14 rounded-full flex items-center justify-center mb-3 ${logro.unlocked ? 'bg-[#00A3FF]/10 text-[#00A3FF] border border-[#00A3FF]/30 shadow-[0_0_15px_rgba(0,163,255,0.2)]' : 'bg-slate-800 text-slate-500 border border-slate-700'}`}>
-                   {logro.icon === 'flip' && <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>}
-                   {logro.icon === 'wall' && <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>}
-                   {logro.icon === 'kong' && <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>}
-                 </div>
-                 <h3 class="text-[11px] md:text-xs font-bold text-center text-white mb-1 leading-tight">{logro.title}</h3>
-                 <span class="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-slate-500">{logro.unlocked ? `DESBLOQUEADO` : 'BLOQUEADO'}</span>
-                 {logro.unlocked && <span class="text-[9px] text-slate-600 mt-0.5">{logro.date}</span>}
-              </div>
-            ))}
-          </div>
+
+      <!-- Historial de Entrenamiento (sola, a ancho completo) -->
+      <div class="mb-12">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-bold flex items-center gap-2 text-white">
+            <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Historial de Entrenamiento
+          </h2>
+          <a href="#" class="text-sm font-semibold text-[#00A3FF] hover:text-[#00E5FF] transition-colors">Registros completos</a>
         </div>
-
-        <!-- Historial de Entrenamiento -->
-        <div>
-           <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-              <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              Historial de Entrenamiento
-            </h2>
-            <a href="#" class="text-sm font-semibold text-[#00A3FF] hover:text-[#00E5FF] transition-colors text-right">Registros<br/>completos</a>
-          </div>
-
-          <div class="space-y-3" id="profile-historial-list">
-            <div class="animate-pulse flex space-x-4 bg-[#111C2A] p-4 rounded-2xl border border-white/5">
-              <div class="rounded-full bg-slate-700 h-10 w-10"></div>
-              <div class="flex-1 space-y-2 py-1">
-                <div class="h-3 bg-slate-700 rounded w-3/4"></div>
-                <div class="space-y-2">
-                  <div class="h-2 bg-slate-700 rounded w-1/2"></div>
-                </div>
-              </div>
+        <div class="space-y-3" id="profile-historial-list">
+          <div class="animate-pulse flex space-x-4 bg-[#111C2A] p-4 rounded-2xl border border-white/5">
+            <div class="rounded-full bg-slate-700 h-10 w-10"></div>
+            <div class="flex-1 space-y-2 py-1">
+              <div class="h-3 bg-slate-700 rounded w-3/4"></div>
+              <div class="space-y-2"><div class="h-2 bg-slate-700 rounded w-1/2"></div></div>
             </div>
-            <!-- El contenido real será inyectado por JS -->
           </div>
+          <!-- El contenido real será inyectado por JS -->
         </div>
       </div>
 
-      <!-- Progreso de Habilidades -->
-      <section>
-        <div class="flex items-center mb-6">
-          <h2 class="text-xl font-bold flex items-center gap-2 text-white">
-            <svg class="w-5 h-5 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-            Progreso de Habilidades
-          </h2>
-        </div>
-
-        <div class="bg-[#111C2A] border border-white/5 rounded-2xl p-6 md:p-8 space-y-6">
-          {PROGRESO_HABILIDADES.map((skill) => (
-            <div>
-              <div class="flex justify-between text-xs font-bold text-slate-400 mb-2 tracking-widest uppercase">
-                <span>{skill.name}</span>
-                <span class="text-white">{skill.percentage}%</span>
-              </div>
-              <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden shadow-inner">
-                 <div class="h-full bg-gradient-to-r from-[#00A3FF] to-[#00E5FF] rounded-full transition-all duration-1000 ease-out" style={`width: ${skill.percentage}%`}></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <!-- Progreso de Habilidades: OCULTO temporalmente -->
 
       <!-- ===== PANEL INSTRUCTOR / ADMIN: Subida de Vídeos ===== -->
       <!-- Oculto por defecto, sólo visible si rol = instructor | admin -->
@@ -578,6 +566,7 @@ const PROGRESO_HABILIDADES = [
       </section>
 
 
+      </div><!-- fin authenticated-profile -->
     </div>
   </main>
 
@@ -778,6 +767,23 @@ const PROGRESO_HABILIDADES = [
 
   async function loadUserProfile() {
     const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session || !session.user) {
+      // No hay sesión: mostrar panel vacío, ocultar ticker y contenido autenticado
+      const noSessionEl = document.getElementById('no-session-profile');
+      const authEl = document.getElementById('authenticated-profile');
+      const tickerEl = document.getElementById('ticker-section');
+      if (noSessionEl) noSessionEl.classList.remove('hidden');
+      if (authEl) authEl.classList.add('hidden');
+      if (tickerEl) tickerEl.classList.add('hidden');
+      return;
+    }
+
+    // Hay sesión: mostrar contenido autenticado, ocultar panel vacío
+    const noSessionEl = document.getElementById('no-session-profile');
+    const authEl = document.getElementById('authenticated-profile');
+    if (noSessionEl) noSessionEl.classList.add('hidden');
+    if (authEl) authEl.classList.remove('hidden');
     
     if (session && session.user) {
       const meta = session.user.user_metadata;

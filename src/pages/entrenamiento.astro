@@ -1,66 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Nav from '../components/Nav.astro';
-
-// Datos Mockup - Mi Entrenamiento
-const CONTINUAR_VIENDO = [
-  {
-    titulo: "Fuerza Estructural para Impactos Largos",
-    instructor: "David Belle",
-    duracion: "45:10",
-    progreso: 65, // porcentaje
-    tiempo_restante: "15 min restantes",
-    thumb: "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?q=80&w=600&auto=format&fit=crop"
-  },
-  {
-    titulo: "Fundamentos de Resiliencia Mental",
-    instructor: "Sarah Miller",
-    duracion: "22:00",
-    progreso: 30,
-    tiempo_restante: "18 min restantes",
-    thumb: "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=600&auto=format&fit=crop"
-  },
-  {
-    titulo: "Transiciones de precisión en altura",
-    instructor: "Alex Freedom",
-    duracion: "18:45",
-    progreso: 85,
-    tiempo_restante: "2 min restantes",
-    thumb: "https://images.unsplash.com/photo-1517436073-3b1b1b01ba32?q=80&w=600&auto=format&fit=crop"
-  }
-];
-
-const MIS_COLECCIONES = [
-  {
-    titulo: "Bases del Movimiento Urbano",
-    videos_count: 12,
-    ultima_act: "Hace 2 días",
-    thumb: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=400&auto=format&fit=crop"
-  },
-  {
-    titulo: "Entrenamiento de Flexibilidad Semanal",
-    videos_count: 5,
-    ultima_act: "Ayer",
-    thumb: "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?q=80&w=400&auto=format&fit=crop"
-  }
-];
-
-const GUARDADOS = [
-  {
-    titulo: "Poder Explosivo: Calistenia",
-    instructor: "Marcus Thorne",
-    dificultad: "INTERMEDIO",
-    duracion: "24:15",
-    thumb: "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=600&auto=format&fit=crop"
-  },
-  {
-    titulo: "Biomecánica del Aterrizaje",
-    instructor: "Dra. Elena Costa",
-    dificultad: "EXPERTO",
-    duracion: "1hr 20m",
-    thumb: "https://images.unsplash.com/photo-1552674605-1a134ab79888?q=80&w=600&auto=format&fit=crop"
-  }
-];
 ---
 
 <Layout title="Mi Entrenamiento">
@@ -73,15 +13,33 @@ const GUARDADOS = [
       <header class="mb-10 lg:mb-14">
         <h1 class="text-3xl md:text-5xl font-black text-white mb-3 tracking-tight">Mi Entrenamiento</h1>
         <p class="text-slate-400 font-medium md:text-lg">Tu espacio personal para seguir creciendo. Retoma donde lo dejaste.</p>
-        
-        <!-- Pestañas Rápidas (Desktop + Móvil scrollable) -->
-        <div class="mt-8 flex items-center gap-6 border-b border-white/10 pb-4 overflow-x-auto no-scrollbar mask-fade-right">
-          <button class="text-[#00A3FF] font-bold border-b-2 border-[#00A3FF] pb-4 -mb-4 whitespace-nowrap">Dashboard</button>
-          <button class="text-slate-400 hover:text-white font-medium pb-4 -mb-4 transition-colors whitespace-nowrap">Historial Completo</button>
-          <button class="text-slate-400 hover:text-white font-medium pb-4 -mb-4 transition-colors whitespace-nowrap">Mis Listas</button>
-          <button class="text-slate-400 hover:text-white font-medium pb-4 -mb-4 transition-colors whitespace-nowrap hidden md:block">Descargas</button>
-        </div>
       </header>
+
+      <!-- Estado: Sin sesión (por defecto visible, JS lo oculta si hay sesión) -->
+      <div id="no-session-state" class="flex flex-col items-center justify-center py-20 text-center">
+        <div class="w-20 h-20 rounded-full bg-[#00A3FF]/10 border border-[#00A3FF]/20 flex items-center justify-center mb-6">
+          <svg class="w-10 h-10 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+        </div>
+        <h2 class="text-2xl md:text-3xl font-black text-white mb-3">Inicia sesión para continuar</h2>
+        <p class="text-slate-400 font-medium max-w-md mx-auto mb-2">Tu espacio de entrenamiento personal está aquí esperándote.</p>
+        <p class="text-slate-500 text-sm max-w-sm mx-auto mb-8">Cuando inicies sesión, podrás retomar donde lo dejaste, ver tu progreso y gestionar tus colecciones de vídeos.</p>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <a href="/login" class="btn-primary px-8 py-3 font-bold flex items-center gap-2 justify-center">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Iniciar Sesión
+          </a>
+          <a href="/catalogo" class="px-8 py-3 rounded-full border border-white/10 hover:border-white/20 text-white font-semibold transition-colors flex items-center gap-2 justify-center">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            Explorar catálogo
+          </a>
+        </div>
+      </div>
+
+      <!-- Contenido autenticado (oculto por defecto, JS lo muestra) -->
+      <div id="authenticated-content" class="hidden">
 
       <!-- Hero Tracker (El video más importante del usuario ahora mismo) -->
       <section id="hero-tracker-section" class="mb-16 hidden">
@@ -102,180 +60,588 @@ const GUARDADOS = [
         </div>
       </section>
 
-      <!-- Mis Listas y Favoritos Grid 2 Cols (Desktop) -->
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 mb-16">
-        
-        <!-- Mis Colecciones -->
-        <section>
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-white">
-               Mis Colecciones
-            </h3>
-            <button class="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-white transition-colors">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-            </button>
-          </div>
+      <!-- Mis Colecciones — ancho completo -->
+      <section class="mb-16">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-white">
+            Mis Colecciones
+          </h3>
+          <button id="btn-nueva-coleccion" class="flex items-center gap-2 px-4 py-2 bg-[#00A3FF]/10 hover:bg-[#00A3FF]/20 border border-[#00A3FF]/30 text-[#00A3FF] rounded-xl text-sm font-bold transition-all">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            Nueva colección
+          </button>
+        </div>
 
-          <div class="grid grid-cols-2 gap-4">
-             {MIS_COLECCIONES.map(lista => (
-               <div class="relative aspect-square sm:aspect-[4/3] rounded-2xl overflow-hidden group border border-white/5 shadow-lg cursor-pointer">
-                  <!-- Imágenes apiladas simuladas -->
-                  <div class="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/40 to-transparent z-10 w-full h-full"></div>
-                  <img src={lista.thumb} alt={lista.titulo} class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80" />
-                  
-                  <div class="absolute bottom-0 left-0 w-full p-4 z-20">
-                     <h4 class="font-bold text-white text-sm sm:text-base leading-snug mb-1 drop-shadow-md">{lista.titulo}</h4>
-                     <p class="text-[11px] text-slate-300 font-medium flex items-center gap-1.5">
-                       <svg class="w-3 h-3 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                       {lista.videos_count} videos
-                     </p>
-                  </div>
-                  
-                  <!-- Play all layer -->
-                  <div class="absolute inset-x-0 top-0 h-1/2 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity z-20 flex items-center justify-center">
-                    <span class="text-xs font-bold text-white tracking-widest uppercase bg-black/50 backdrop-blur px-3 py-1.5 rounded flex items-center gap-2">
-                       <svg class="w-3 h-3 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg> Reproducir todo
-                    </span>
-                  </div>
-               </div>
-             ))}
-          </div>
-        </section>
+        <!-- Estado vacío -->
+        <div id="colecciones-empty" class="hidden flex-col items-center justify-center py-16 text-center bg-[#111C2A] rounded-2xl border border-white/5">
+          <svg class="w-14 h-14 text-slate-700 mb-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/><path d="M12 9v6"/></svg>
+          <h3 class="text-lg font-bold text-white mb-2">No tienes colecciones aún</h3>
+          <p class="text-slate-400 text-sm max-w-xs mx-auto mb-6">Crea tu primera colección y añade vídeos del catálogo para organizarlos a tu manera.</p>
+          <button id="btn-nueva-coleccion-empty" class="btn-primary px-6 py-2.5 text-sm font-bold flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            Crear colección
+          </button>
+        </div>
 
-        <!-- Talleres Guardados (Bookmarks) -->
-        <section>
-          <div class="flex items-center justify-between mb-6">
-            <h3 class="text-xl md:text-2xl font-bold flex items-center gap-2 text-white">
-               Guardados
-            </h3>
-            <button class="text-sm font-semibold text-slate-400 hover:text-white transition-colors">Ver todos</button>
-          </div>
+        <!-- Estado de carga -->
+        <div id="colecciones-loading" class="flex items-center justify-center py-16">
+          <div class="w-7 h-7 border-2 border-[#00A3FF] border-t-transparent rounded-full animate-spin"></div>
+        </div>
 
-          <div class="flex flex-col gap-3">
-             {GUARDADOS.map(guardado => (
-               <a href="/reproductor" class="flex gap-4 p-3 pr-4 rounded-2xl border border-transparent hover:border-white/10 hover:bg-[#111C2A] transition-colors group">
-                 <div class="w-32 md:w-40 aspect-video rounded-xl overflow-hidden flex-shrink-0 relative">
-                   <img src={guardado.thumb} class="w-full h-full object-cover" />
-                   <div class="absolute bottom-1 right-1 bg-black/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
-                     {guardado.duracion}
-                   </div>
-                 </div>
-                 
-                 <div class="flex flex-col justify-center flex-grow min-w-0 flex-shrink">
-                   <h4 class="font-bold text-sm md:text-base text-slate-100 mb-1 leading-snug group-hover:text-[#00A3FF] truncate">{guardado.titulo}</h4>
-                   <p class="text-xs text-slate-400 font-medium mb-1.5">{guardado.instructor}</p>
-                   <div>
-                     <span class="text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded uppercase bg-slate-800 text-slate-300">
-                       {guardado.dificultad}
-                     </span>
-                   </div>
-                 </div>
-                 
-                 <div class="hidden sm:flex self-center pl-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white">
-                      <!-- Bookmark icon -->
-                      <svg class="w-4 h-4 fill-current text-[#00A3FF]" viewBox="0 0 24 24" stroke="currentColor" stroke-width="0"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 4h6a2 2 0 0 1 2 2v14l-5 -3l-5 3v-14a2 2 0 0 1 2 -2" /></svg>
-                    </button>
-                 </div>
-               </a>
-             ))}
-          </div>
-        </section>
+        <!-- Grid de colecciones -->
+        <div id="colecciones-grid" class="hidden grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <!-- Relleno por JS -->
+        </div>
+      </section>
 
-      </div>
-      
+      </div><!-- fin authenticated-content -->
     </div>
   </main>
 
   <footer class="border-t border-slate-800 bg-[#0F172A] relative z-10 hidden md:block">
-    <div class="container xl:max-w-[1200px] mx-auto px-8 py-8 flex items-center justify-center text-xs text-slate-500 font-medium">
+    <div class="container xl:max-w-[1200px] mx-auto px-8 py-8 flex items-center justify-between text-xs text-slate-500 font-medium">
       <p>© 2026 Freedom movement lab. Rompe los límites.</p>
+      <div class="flex gap-6">
+        <a href="/privacidad" class="hover:text-white transition-colors">Privacidad</a>
+        <a href="/terminos" class="hover:text-white transition-colors">Términos</a>
+      </div>
     </div>
   </footer>
+
+  <!-- Modal: Crear / Renombrar colección -->
+  <dialog id="modal-coleccion" class="bg-[#0b1016] text-white border border-white/10 rounded-2xl p-6 shadow-2xl backdrop-blur-xl w-[90%] max-w-[420px] m-auto">
+    <h2 id="modal-coleccion-title" class="text-xl font-black mb-5">Nueva Colección</h2>
+    <form id="form-coleccion" class="flex flex-col gap-4">
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nombre</label>
+        <input id="input-coleccion-nombre" type="text" maxlength="60" placeholder="Ej: Rutina de parkour..." class="w-full bg-[#1E293B] border border-white/5 text-white p-3 rounded-xl focus:outline-none focus:border-[#00A3FF] transition-colors" required>
+        <p id="error-coleccion" class="hidden text-xs font-bold text-rose-400 mt-2"></p>
+      </div>
+      <div class="flex gap-3 justify-end mt-2">
+        <button type="button" id="btn-cancel-coleccion" class="px-4 py-2 text-slate-400 hover:text-white font-semibold text-sm transition-colors">Cancelar</button>
+        <button type="submit" id="btn-guardar-coleccion" class="btn-primary px-6 py-2 rounded-xl text-sm font-bold">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Modal: Editar colección (renombrar + reordenar vídeos) -->
+  <dialog id="modal-editar-coleccion" class="bg-[#0b1016] text-white border border-white/10 rounded-2xl p-6 shadow-2xl backdrop-blur-xl w-[90%] max-w-[540px] m-auto">
+    <div class="flex items-center justify-between mb-5">
+      <h2 class="text-xl font-black">Editar Colección</h2>
+      <button id="btn-close-edit" class="text-slate-400 hover:text-white transition-colors p-1">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    
+    <!-- Renombrar -->
+    <div class="mb-6">
+      <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Nombre de la colección</label>
+      <div class="flex gap-2">
+        <input id="input-edit-nombre" type="text" maxlength="60" class="flex-1 bg-[#1E293B] border border-white/5 text-white p-3 rounded-xl focus:outline-none focus:border-[#00A3FF] transition-colors">
+        <button id="btn-save-nombre" class="px-4 py-2 bg-[#00A3FF] hover:bg-[#008AE6] text-white font-bold text-sm rounded-xl transition-colors flex-shrink-0">Guardar</button>
+      </div>
+      <p id="error-edit-nombre" class="hidden text-xs font-bold text-rose-400 mt-2"></p>
+    </div>
+
+    <!-- Lista de vídeos -->
+    <div>
+      <h3 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3">Vídeos en esta colección</h3>
+      <div id="edit-videos-list" class="space-y-2 max-h-[320px] overflow-y-auto pr-1">
+        <!-- Relleno por JS -->
+      </div>
+    </div>
+
+    <!-- Acciones de la colección -->
+    <div class="mt-6 pt-5 border-t border-white/5 flex justify-between items-center">
+      <button id="btn-delete-coleccion" class="text-rose-500 hover:text-rose-400 text-sm font-bold flex items-center gap-2 transition-colors">
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        Eliminar colección
+      </button>
+      <button id="btn-close-edit-bottom" class="text-slate-400 hover:text-white text-sm font-semibold transition-colors">Cerrar</button>
+    </div>
+  </dialog>
 </Layout>
 
 <style>
-  /* Ocultar barra de scroll en los tabs de navegación de la cabecera */
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  /* Mascara para difuminado al final del scroll horizontal */
-  .mask-fade-right {
-    mask-image: linear-gradient(to right, black 85%, transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-  }
+  /* Ocultar barra de scroll */
+  #edit-videos-list::-webkit-scrollbar { width: 4px; }
+  #edit-videos-list::-webkit-scrollbar-track { background: transparent; }
+  #edit-videos-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
 </style>
 
 <script>
   import { supabase } from '../lib/supabase';
 
+  // ===== ESTADO GLOBAL =====
+  let currentUserId: string | null = null;
+  let colecciones: any[] = [];
+  let editingColeccionId: string | null = null;
+
+  // ===== ELEMENTOS UI =====
+  const coleccionesGrid = document.getElementById('colecciones-grid') as HTMLDivElement;
+  const coleccionesEmpty = document.getElementById('colecciones-empty') as HTMLDivElement;
+  const coleccionesLoading = document.getElementById('colecciones-loading') as HTMLDivElement;
+
+  const modalColeccion = document.getElementById('modal-coleccion') as HTMLDialogElement;
+  const modalEditarColeccion = document.getElementById('modal-editar-coleccion') as HTMLDialogElement;
+  const formColeccion = document.getElementById('form-coleccion') as HTMLFormElement;
+  const inputNombre = document.getElementById('input-coleccion-nombre') as HTMLInputElement;
+  const errorColeccion = document.getElementById('error-coleccion') as HTMLParagraphElement;
+  const btnGuardar = document.getElementById('btn-guardar-coleccion') as HTMLButtonElement;
+  const modalColeccionTitle = document.getElementById('modal-coleccion-title')!;
+
+  // ===== HELPERS =====
+  function normalizarNombre(nombre: string) {
+    return nombre.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function showLoading() {
+    coleccionesLoading.classList.remove('hidden');
+    coleccionesGrid.classList.add('hidden');
+    coleccionesEmpty.classList.remove('flex');
+    coleccionesEmpty.classList.add('hidden');
+  }
+
+  function showGrid() {
+    coleccionesLoading.classList.add('hidden');
+    coleccionesGrid.classList.remove('hidden');
+    coleccionesEmpty.classList.add('hidden');
+    coleccionesEmpty.classList.remove('flex');
+  }
+
+  function showEmpty() {
+    coleccionesLoading.classList.add('hidden');
+    coleccionesGrid.classList.add('hidden');
+    coleccionesEmpty.classList.remove('hidden');
+    coleccionesEmpty.classList.add('flex');
+  }
+
+  // ===== CARGAR COLECCIONES =====
+  async function cargarColecciones() {
+    if (!currentUserId) return;
+    showLoading();
+
+    try {
+      const { data, error } = await supabase
+        .from('colecciones')
+        .select(`
+          id, nombre, creado_en,
+          coleccion_videos ( id, orden, videos!inner ( id, titulo, mux_playback_id, miniatura_segundo ) )
+        `)
+        .eq('usuario_id', currentUserId)
+        .order('creado_en', { ascending: false });
+
+      if (error) throw error;
+
+      colecciones = data || [];
+
+      if (colecciones.length === 0) {
+        showEmpty();
+        return;
+      }
+
+      renderColecciones(colecciones);
+      showGrid();
+    } catch (e) {
+      console.error('Error cargando colecciones:', e);
+      showEmpty();
+    }
+  }
+
+  function renderColecciones(lista: any[]) {
+    coleccionesGrid.innerHTML = '';
+
+    lista.forEach(col => {
+      const videos = (col.coleccion_videos || [])
+        .sort((a: any, b: any) => a.orden - b.orden)
+        .map((cv: any) => cv.videos)
+        .filter(Boolean);
+
+      const videoCount = videos.length;
+      const thumb = videos[0]?.mux_playback_id
+        ? `https://image.mux.com/${videos[0].mux_playback_id}/thumbnail.webp?time=${videos[0].miniatura_segundo ?? 1}&width=400`
+        : null;
+
+      const card = document.createElement('div');
+      card.className = 'relative group rounded-2xl overflow-hidden border border-white/5 bg-[#111C2A] shadow-lg cursor-pointer';
+      card.setAttribute('data-coleccion-id', col.id);
+
+      card.innerHTML = `
+        <div class="aspect-[16/10] relative overflow-hidden">
+          ${thumb
+            ? `<img src="${thumb}" alt="${col.nombre}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80">`
+            : `<div class="w-full h-full flex items-center justify-center bg-[#1E293B]"><svg class="w-10 h-10 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 12h6"/></svg></div>`
+          }
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/30 to-transparent z-10"></div>
+
+          <!-- Play overlay -->
+          <div class="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+            <a href="${videoCount > 0 ? `/reproductor?id=${videos[0].id}&coleccion=${col.id}` : '#'}" 
+               class="bg-[#00A3FF]/90 backdrop-blur rounded-full p-3 shadow-xl transition-transform hover:scale-110" 
+               title="Reproducir colección"
+               onclick="event.stopPropagation()">
+              <svg class="w-6 h-6 fill-white ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            </a>
+          </div>
+
+          <!-- Edit button -->
+          <button class="btn-edit-col absolute top-2 right-2 z-20 w-8 h-8 rounded-full bg-black/60 backdrop-blur border border-white/10 flex items-center justify-center text-slate-400 hover:text-white opacity-0 group-hover:opacity-100 transition-all" 
+                  data-coleccion-id="${col.id}" title="Editar colección" onclick="event.stopPropagation()">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </button>
+        </div>
+
+        <div class="p-4 z-20 relative">
+          <h4 class="font-bold text-white text-sm leading-snug mb-1 truncate">${col.nombre}</h4>
+          <p class="text-[11px] text-slate-400 font-medium flex items-center gap-1.5">
+            <svg class="w-3 h-3 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            ${videoCount} ${videoCount === 1 ? 'vídeo' : 'vídeos'}
+          </p>
+        </div>
+      `;
+
+      // Clic en card → reproducir
+      card.addEventListener('click', () => {
+        if (videoCount > 0) {
+          window.location.href = `/reproductor?id=${videos[0].id}&coleccion=${col.id}`;
+        } else {
+          window.showToast?.('Esta colección no tiene vídeos todavía.', 'info');
+        }
+      });
+
+      coleccionesGrid.appendChild(card);
+    });
+
+    // Listeners botones editar
+    document.querySelectorAll('.btn-edit-col').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = (btn as HTMLElement).getAttribute('data-coleccion-id');
+        if (id) abrirEditorColeccion(id);
+      });
+    });
+  }
+
+  // ===== NUEVA COLECCIÓN =====
+  function abrirModalNueva() {
+    modalColeccionTitle.textContent = 'Nueva Colección';
+    inputNombre.value = '';
+    errorColeccion.classList.add('hidden');
+    errorColeccion.textContent = '';
+    btnGuardar.textContent = 'Crear';
+    modalColeccion.showModal();
+    setTimeout(() => inputNombre.focus(), 100);
+  }
+
+  document.getElementById('btn-nueva-coleccion')?.addEventListener('click', abrirModalNueva);
+  document.getElementById('btn-nueva-coleccion-empty')?.addEventListener('click', abrirModalNueva);
+  document.getElementById('btn-cancel-coleccion')?.addEventListener('click', () => modalColeccion.close());
+
+  formColeccion?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentUserId) return;
+
+    const nombre = inputNombre.value.trim();
+    if (!nombre) return;
+
+    // Validar duplicado (case-insensitive, ignorando tildes)
+    const existe = colecciones.some(c => normalizarNombre(c.nombre) === normalizarNombre(nombre));
+    if (existe) {
+      errorColeccion.textContent = 'Ya tienes una colección con ese nombre.';
+      errorColeccion.classList.remove('hidden');
+      return;
+    }
+
+    errorColeccion.classList.add('hidden');
+    btnGuardar.disabled = true;
+    btnGuardar.textContent = 'Creando...';
+
+    try {
+      const { error } = await supabase.from('colecciones').insert({
+        usuario_id: currentUserId,
+        nombre
+      });
+
+      if (error) throw error;
+
+      modalColeccion.close();
+      window.showToast?.(`Colección "${nombre}" creada.`, 'success');
+      await cargarColecciones();
+    } catch (err: any) {
+      errorColeccion.textContent = 'Error al crear la colección. Inténtalo de nuevo.';
+      errorColeccion.classList.remove('hidden');
+    } finally {
+      btnGuardar.disabled = false;
+      btnGuardar.textContent = 'Crear';
+    }
+  });
+
+  // ===== EDITOR DE COLECCIÓN =====
+  async function abrirEditorColeccion(coleccionId: string) {
+    const col = colecciones.find(c => c.id === coleccionId);
+    if (!col) return;
+
+    editingColeccionId = coleccionId;
+
+    const inputEditNombre = document.getElementById('input-edit-nombre') as HTMLInputElement;
+    const errorEditNombre = document.getElementById('error-edit-nombre') as HTMLParagraphElement;
+    const editVideosList = document.getElementById('edit-videos-list') as HTMLDivElement;
+
+    inputEditNombre.value = col.nombre;
+    errorEditNombre.classList.add('hidden');
+
+    // Renderizar vídeos de la colección
+    const videos = (col.coleccion_videos || [])
+      .sort((a: any, b: any) => a.orden - b.orden)
+      .filter((cv: any) => cv.videos != null);
+
+    if (videos.length === 0) {
+      editVideosList.innerHTML = `<p class="text-slate-500 text-sm text-center py-6">Esta colección no tiene vídeos todavía.<br><a href="/catalogo" class="text-[#00A3FF] font-medium hover:underline">Explorar catálogo</a></p>`;
+    } else {
+      editVideosList.innerHTML = videos.map((cv: any, i: number) => {
+        const v = cv.videos;
+        const thumb = v.mux_playback_id
+          ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=${v.miniatura_segundo ?? 1}&width=120`
+          : null;
+
+        return `
+          <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors group" data-cv-id="${cv.id}" data-video-id="${v.id}">
+            <div class="flex flex-col gap-1 flex-shrink-0">
+              <button class="btn-order-up w-6 h-5 flex items-center justify-center text-slate-600 hover:text-[#00A3FF] transition-colors disabled:opacity-30" data-cv-id="${cv.id}" ${i === 0 ? 'disabled' : ''} title="Subir">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m18 15-6-6-6 6"/></svg>
+              </button>
+              <button class="btn-order-down w-6 h-5 flex items-center justify-center text-slate-600 hover:text-[#00A3FF] transition-colors disabled:opacity-30" data-cv-id="${cv.id}" ${i === videos.length - 1 ? 'disabled' : ''} title="Bajar">
+                <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+            </div>
+            ${thumb
+              ? `<img src="${thumb}" alt="${v.titulo}" class="w-14 h-9 object-cover rounded-lg flex-shrink-0 border border-white/5">`
+              : `<div class="w-14 h-9 bg-slate-800 rounded-lg flex-shrink-0 flex items-center justify-center"><svg class="w-4 h-4 text-slate-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>`
+            }
+            <span class="text-sm font-medium text-slate-200 flex-1 truncate">${v.titulo}</span>
+            <button class="btn-remove-from-col w-7 h-7 flex items-center justify-center rounded-full text-slate-600 hover:text-rose-400 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0" data-cv-id="${cv.id}" title="Quitar de la colección">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    modalEditarColeccion.showModal();
+    bindEditorListeners(videos, col);
+  }
+
+  function bindEditorListeners(videos: any[], col: any) {
+    const inputEditNombre = document.getElementById('input-edit-nombre') as HTMLInputElement;
+    const errorEditNombre = document.getElementById('error-edit-nombre') as HTMLParagraphElement;
+    const btnSaveNombre = document.getElementById('btn-save-nombre') as HTMLButtonElement | null;
+    const btnDeleteColeccion = document.getElementById('btn-delete-coleccion') as HTMLButtonElement | null;
+
+    // Evita listeners duplicados en botones fijos del modal de edición.
+    if (btnSaveNombre) {
+      const clone = btnSaveNombre.cloneNode(true) as HTMLButtonElement;
+      btnSaveNombre.replaceWith(clone);
+    }
+    if (btnDeleteColeccion) {
+      const clone = btnDeleteColeccion.cloneNode(true) as HTMLButtonElement;
+      btnDeleteColeccion.replaceWith(clone);
+    }
+
+    // Guardar nombre
+    document.getElementById('btn-save-nombre')?.addEventListener('click', async () => {
+      const nuevoNombre = inputEditNombre.value.trim();
+      if (!editingColeccionId) return;
+      if (!nuevoNombre) {
+        errorEditNombre.textContent = 'El nombre es obligatorio.';
+        errorEditNombre.classList.remove('hidden');
+        return;
+      }
+
+      const existe = colecciones.some(c => c.id !== editingColeccionId && normalizarNombre(c.nombre) === normalizarNombre(nuevoNombre));
+      if (existe) {
+        errorEditNombre.textContent = 'Ya tienes una colección con ese nombre.';
+        errorEditNombre.classList.remove('hidden');
+        return;
+      }
+      errorEditNombre.classList.add('hidden');
+
+      const { error } = await supabase.from('colecciones').update({ nombre: nuevoNombre }).eq('id', editingColeccionId);
+      if (!error) {
+        window.showToast?.('Nombre actualizado.', 'success');
+        await cargarColecciones();
+        // Actualizar el objeto local para validaciones posteriores
+        const idx = colecciones.findIndex(c => c.id === editingColeccionId);
+        if (idx >= 0) colecciones[idx].nombre = nuevoNombre;
+      } else {
+        window.showToast?.('Error al guardar el nombre.', 'error');
+      }
+    });
+
+    // Quitar vídeo de colección
+    document.querySelectorAll('.btn-remove-from-col').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const cvId = (btn as HTMLElement).getAttribute('data-cv-id');
+        if (!cvId || !editingColeccionId) return;
+
+        const { error } = await supabase.from('coleccion_videos').delete().eq('id', cvId);
+        if (!error) {
+          window.showToast?.('Vídeo eliminado de la colección.', 'info');
+          await cargarColecciones();
+          // Reabrir el editor con datos frescos
+          if (editingColeccionId) await abrirEditorColeccion(editingColeccionId);
+        } else {
+          window.showToast?.('Error al eliminar el vídeo.', 'error');
+        }
+      });
+    });
+
+    // Reordenar: subir
+    document.querySelectorAll('.btn-order-up').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const cvId = (btn as HTMLElement).getAttribute('data-cv-id');
+        if (!cvId || !editingColeccionId) return;
+        await reordenarVideo(cvId, 'up', editingColeccionId);
+      });
+    });
+
+    // Reordenar: bajar
+    document.querySelectorAll('.btn-order-down').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const cvId = (btn as HTMLElement).getAttribute('data-cv-id');
+        if (!cvId || !editingColeccionId) return;
+        await reordenarVideo(cvId, 'down', editingColeccionId);
+      });
+    });
+
+    // Eliminar colección completa
+    document.getElementById('btn-delete-coleccion')?.addEventListener('click', async () => {
+      if (!editingColeccionId) return;
+      const colNombre = col.nombre;
+
+      // `dialog` vive en top-layer y tapa el modal custom de confirmación, por eso lo cerramos antes.
+      modalEditarColeccion.close();
+      const confirmed = await window.showConfirm?.(
+        `¿Eliminar la colección "${colNombre}"? Esta acción no se puede deshacer.`,
+        'Eliminar',
+        '#ef4444'
+      );
+      if (!confirmed) {
+        modalEditarColeccion.showModal();
+        return;
+      }
+
+      const { error } = await supabase.from('colecciones').delete().eq('id', editingColeccionId);
+      if (!error) {
+        window.showToast?.(`Colección "${colNombre}" eliminada.`, 'info');
+        await cargarColecciones();
+      } else {
+        modalEditarColeccion.showModal();
+        window.showToast?.('Error al eliminar la colección.', 'error');
+      }
+    });
+  }
+
+  async function reordenarVideo(cvId: string, direccion: 'up' | 'down', coleccionId: string) {
+    const col = colecciones.find(c => c.id === coleccionId);
+    if (!col) return;
+
+    const videos = (col.coleccion_videos || []).sort((a: any, b: any) => a.orden - b.orden);
+    const idx = videos.findIndex((v: any) => v.id === cvId);
+    if (idx < 0) return;
+
+    const swapIdx = direccion === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= videos.length) return;
+
+    const a = videos[idx];
+    const b = videos[swapIdx];
+    const tmpOrden = a.orden;
+
+    // Swap órdenes en BD
+    await Promise.all([
+      supabase.from('coleccion_videos').update({ orden: b.orden }).eq('id', a.id),
+      supabase.from('coleccion_videos').update({ orden: tmpOrden }).eq('id', b.id),
+    ]);
+
+    await cargarColecciones();
+    if (editingColeccionId) await abrirEditorColeccion(editingColeccionId);
+  }
+
+  // Cerrar modal editar
+  ['btn-close-edit', 'btn-close-edit-bottom'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', () => modalEditarColeccion.close());
+  });
+
+  // ===== CONTINUAR VIENDO =====
   async function loadContinuarViendo() {
-     const { data: { session } } = await supabase.auth.getSession();
-     if (!session?.user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session?.user) {
+      // No hay sesión: mostrar estado vacío, ocultar contenido autenticado
+      const noSession = document.getElementById('no-session-state');
+      const authContent = document.getElementById('authenticated-content');
+      if (noSession) noSession.classList.remove('hidden');
+      if (authContent) authContent.classList.add('hidden');
+      return;
+    }
 
-     try {
-       const { data: historial, error } = await supabase
-         .from('historial_videos')
-         .select('tiempo_actual, video_id, videos(id, titulo, instructor, duracion, mux_playback_id)')
-         .eq('usuario_id', session.user.id)
-         .eq('completado', false)
-         .order('actualizado_en', { ascending: false });
+    // Hay sesión: ocultar disclaimer, mostrar contenido
+    const noSession = document.getElementById('no-session-state');
+    const authContent = document.getElementById('authenticated-content');
+    if (noSession) noSession.classList.add('hidden');
+    if (authContent) authContent.classList.remove('hidden');
 
-       if (error) {
-         console.error('Error fetching historial (posible RLS):', error);
-         return;
-       }
+    currentUserId = session.user.id;
+    cargarColecciones();
 
-       if (!historial || historial.length === 0) {
-          // No hay videos pendientes. Se quedan ocultos.
-          return;
-       }
+    try {
+      const { data: historial, error } = await supabase
+        .from('historial_videos')
+        .select('tiempo_actual, video_id, videos(id, titulo, instructor, duracion, mux_playback_id)')
+        .eq('usuario_id', session.user.id)
+        .eq('completado', false)
+        .order('actualizado_en', { ascending: false });
 
-       // Filtrar posibles videos nulos (si se borraron de la BD pero sigue el registro)
-       const pendientes = historial.filter((item: any) => item.videos != null);
-       if (pendientes.length === 0) return;
+      if (error) {
+        console.error('Error fetching historial (posible RLS):', error);
+        return;
+      }
 
-       const heroSection = document.getElementById('hero-tracker-section');
-       const gridSection = document.getElementById('grid-continuar-section');
-       const gridContainer = document.getElementById('grid-continuar-container');
+      if (!historial || historial.length === 0) return;
 
-       // Función de ayuda para formateo
-       const formatearTiempoRestante = (tiempo_actual: number, duracion_total: number) => {
-          if (!duracion_total) return "VOD";
-          const restanteMin = Math.max(1, Math.floor((duracion_total - tiempo_actual) / 60));
-          return `${restanteMin} min restantes`;
-       };
+      const pendientes = historial.filter((item: any) => item.videos != null);
+      if (pendientes.length === 0) return;
 
-       // Render del Video Principal (Hero Tracker)
-       const v1 = pendientes[0];
-       const videoInfo1 = v1.videos;
-       const pct1 = videoInfo1.duracion ? Math.min(100, (v1.tiempo_actual / videoInfo1.duracion) * 100) : 10;
-       const thumb1 = videoInfo1.mux_playback_id 
-         ? `https://image.mux.com/${videoInfo1.mux_playback_id}/thumbnail.webp?time=${Math.max(1, v1.tiempo_actual)}`
-         : "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?q=80&w=600&auto=format&fit=crop";
+      const heroSection = document.getElementById('hero-tracker-section');
+      const gridSection = document.getElementById('grid-continuar-section');
+      const gridContainer = document.getElementById('grid-continuar-container');
 
-       if (heroSection) {
-         heroSection.innerHTML = `
+      const formatearTiempoRestante = (tiempo_actual: number, duracion_total: number) => {
+        if (!duracion_total) return "VOD";
+        const restanteMin = Math.max(1, Math.floor((duracion_total - tiempo_actual) / 60));
+        return `${restanteMin} min restantes`;
+      };
+
+      const v1 = pendientes[0];
+      const videoInfo1 = v1.videos;
+      const pct1 = videoInfo1.duracion ? Math.min(100, (v1.tiempo_actual / videoInfo1.duracion) * 100) : 10;
+      const thumb1 = videoInfo1.mux_playback_id
+        ? `https://image.mux.com/${videoInfo1.mux_playback_id}/thumbnail.webp?time=${Math.max(1, v1.tiempo_actual)}`
+        : "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?q=80&w=600&auto=format&fit=crop";
+
+      if (heroSection) {
+        heroSection.innerHTML = `
           <div class="relative w-full rounded-3xl overflow-hidden bg-[#111C2A] border border-white/5 group shadow-2xl flex flex-col md:flex-row">
              <div class="w-full md:w-[60%] lg:w-[65%] relative aspect-video md:aspect-[16/9] overflow-hidden">
-               <!-- Thumbnail -->
                <img src="${thumb1}" alt="${videoInfo1.titulo}" class="w-full h-full object-cover opacity-80 mix-blend-lighten group-hover:scale-105 transition-transform duration-700" />
-               <!-- Play flotante -->
                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                    <div class="w-16 h-16 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white border border-white/20 scale-95 group-hover:scale-110 group-hover:bg-[#00A3FF] group-hover:border-[#00A3FF] transition-all duration-300 shadow-xl">
                       <svg class="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                    </div>
                </div>
-               <!-- Barra de progreso -->
                <div class="absolute bottom-0 left-0 w-full h-1.5 bg-black/60 backdrop-blur-sm z-10">
                  <div class="h-full bg-[#00A3FF] shadow-[0_0_10px_#00A3FF]" style="width: ${pct1}%"></div>
                </div>
              </div>
-             
              <div class="p-6 md:p-8 flex flex-col justify-center w-full md:w-[40%] lg:w-[35%]">
                <span class="text-xs font-bold text-[#00A3FF] tracking-widest uppercase mb-3 flex items-center gap-2">
                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
@@ -283,7 +649,6 @@ const GUARDADOS = [
                </span>
                <h2 class="text-2xl md:text-3xl font-black text-white leading-tight mb-2 line-clamp-3">${videoInfo1.titulo}</h2>
                <p class="text-slate-400 font-medium mb-8 text-sm">${videoInfo1.instructor || 'Freedom Academy'} • ${formatearTiempoRestante(v1.tiempo_actual, videoInfo1.duracion)}</p>
-               
                <a href="/reproductor?id=${videoInfo1.id}" class="btn-primary w-full text-center flex items-center justify-center gap-2 text-[15px] py-3.5 shadow-[0_0_20px_rgba(0,163,255,0.2)]">
                   <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                   Continuar Clase
@@ -291,54 +656,47 @@ const GUARDADOS = [
              </div>
           </div>
          `;
-         heroSection.classList.remove('hidden');
-       }
+        heroSection.classList.remove('hidden');
+      }
 
-       // Render del Grid de los demás videos
-       if (pendientes.length > 1 && gridSection && gridContainer) {
-          const gridHtml = pendientes.slice(1, 4).map((item: any) => {
-             const v = item.videos;
-             const pct = v.duracion ? Math.min(100, (item.tiempo_actual / v.duracion) * 100) : 10;
-             const thumb = v.mux_playback_id
-               ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=${Math.max(1, item.tiempo_actual)}`
-               : "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?q=80&w=600&auto=format&fit=crop";
+      if (pendientes.length > 1 && gridSection && gridContainer) {
+        const gridHtml = pendientes.slice(1, 4).map((item: any) => {
+          const v = item.videos;
+          const pct = v.duracion ? Math.min(100, (item.tiempo_actual / v.duracion) * 100) : 10;
+          const thumb = v.mux_playback_id
+            ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=${Math.max(1, item.tiempo_actual)}`
+            : "https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?q=80&w=600&auto=format&fit=crop";
 
-             return `
-               <a href="/reproductor?id=${v.id}" class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group cursor-pointer block">
-                 <div class="relative w-full aspect-video overflow-hidden">
-                   <img src="${thumb}" alt="${v.titulo}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500" />
-                   
-                   <div class="absolute bottom-0 left-0 w-full h-1 bg-black/60 z-10">
-                     <div class="h-full bg-[#00A3FF]" style="width: ${pct}%"></div>
-                   </div>
-
-                   <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div class="w-12 h-12 rounded-full bg-black/50 backdrop-blur text-white flex items-center justify-center border border-white/20">
-                        <svg class="w-5 h-5 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                      </div>
-                   </div>
+          return `
+             <a href="/reproductor?id=${v.id}" class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group cursor-pointer block">
+               <div class="relative w-full aspect-video overflow-hidden">
+                 <img src="${thumb}" alt="${v.titulo}" class="w-full h-full object-cover opacity-90 group-hover:scale-105 transition-transform duration-500" />
+                 <div class="absolute bottom-0 left-0 w-full h-1 bg-black/60 z-10">
+                   <div class="h-full bg-[#00A3FF]" style="width: ${pct}%"></div>
                  </div>
-
-                 <div class="p-4 md:p-5">
-                   <h4 class="text-base font-bold text-slate-100 mb-1 leading-snug group-hover:text-[#00A3FF] transition-colors line-clamp-2">
-                     ${v.titulo}
-                   </h4>
-                   <div class="flex justify-between items-center mt-3">
-                     <p class="text-xs font-medium text-slate-400">${v.instructor || 'Instructor'}</p>
-                     <p class="text-[11px] font-bold text-slate-500">${formatearTiempoRestante(item.tiempo_actual, v.duracion)}</p>
-                   </div>
+                 <div class="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div class="w-12 h-12 rounded-full bg-black/50 backdrop-blur text-white flex items-center justify-center border border-white/20">
+                      <svg class="w-5 h-5 fill-current ml-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    </div>
                  </div>
-               </a>
-             `;
-          }).join('');
+               </div>
+               <div class="p-4 md:p-5">
+                 <h4 class="text-base font-bold text-slate-100 mb-1 leading-snug group-hover:text-[#00A3FF] transition-colors line-clamp-2">${v.titulo}</h4>
+                 <div class="flex justify-between items-center mt-3">
+                   <p class="text-xs font-medium text-slate-400">${v.instructor || 'Instructor'}</p>
+                   <p class="text-[11px] font-bold text-slate-500">${formatearTiempoRestante(item.tiempo_actual, v.duracion)}</p>
+                 </div>
+               </div>
+             </a>
+           `;
+        }).join('');
 
-          gridContainer.innerHTML = gridHtml;
-          gridSection.classList.remove('hidden');
-       }
-
-     } catch(e) {
-       console.error("Error trayendo 'Seguir Viendo'", e);
-     }
+        gridContainer.innerHTML = gridHtml;
+        gridSection.classList.remove('hidden');
+      }
+    } catch(e) {
+      console.error("Error trayendo 'Seguir Viendo'", e);
+    }
   }
 
   loadContinuarViendo();
