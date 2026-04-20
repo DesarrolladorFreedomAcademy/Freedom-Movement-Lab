@@ -35,6 +35,23 @@ const talleresDeBD = videosGuardados.map((v: any) => ({
 }));
 
 const TALLERES = [...talleresDeBD];
+
+// Extraer valores únicos para los filtros
+const CATEGORIAS_UNICAS = [...new Set(talleresDeBD.map((v: any) => v.categoria).filter(Boolean))].sort();
+const DIFICULTADES_UNICAS = [...new Set(talleresDeBD.map((v: any) => v.dificultad).filter(Boolean))].sort();
+
+// Instructores únicos que han subido vídeos publicados
+let instructoresConVideos: string[] = [];
+try {
+  const { data: insData } = await supabase
+    .from('videos')
+    .select('instructor')
+    .eq('estado', 'listo')
+    .not('instructor', 'is', null);
+  if (insData) {
+    instructoresConVideos = [...new Set(insData.map((v: any) => v.instructor).filter(Boolean))].sort() as string[];
+  }
+} catch(e) { /* silencioso */ }
 ---
 
 <Layout title="Catálogo VOD">
@@ -152,31 +169,80 @@ const TALLERES = [...talleresDeBD];
         </button>
       </div>
       
-      <!-- Filtros (solo visibles en tab Todos) -->
-      <div id="filters-bar" class="flex flex-wrap items-center gap-4 mb-10">
-        <button class="bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2">
-           Dificultad
-           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <button class="bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2">
-           Categoría
-           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-        <button class="bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2">
-           Instructor
-           <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
+      <!-- Filtros funcionales -->
+      <div id="filters-bar" class="flex flex-wrap items-center gap-3 mb-10">
         
-        <button class="text-[#00A3FF] hover:text-[#00E5FF] text-sm font-bold pl-2 transition-colors">
-          Borrar todo
-        </button>
+        <!-- Filtro Dificultad -->
+        <div class="relative" id="filter-dificultad-wrapper">
+          <button id="btn-filter-dificultad" class="filter-btn bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2" data-open="false">
+            <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span id="label-dificultad">Dificultad</span>
+            <svg class="w-3.5 h-3.5 transition-transform" id="chevron-dificultad" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div id="dropdown-dificultad" class="hidden absolute left-0 top-full mt-2 bg-[#111C2A] border border-white/10 rounded-xl shadow-2xl z-50 min-w-[180px] py-1.5 overflow-hidden">
+            {
+              DIFICULTADES_UNICAS.map((dif: any) => (
+                <button class="filter-option w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white flex items-center gap-2 transition-colors" data-filter="dificultad" data-value={dif}>
+                  <span class={`w-2 h-2 rounded-full flex-shrink-0 ${dif === 'PRINCIPIANTE' ? 'bg-emerald-500' : dif === 'EXPERTO' ? 'bg-rose-500' : 'bg-[#00A3FF]'}`}></span>
+                  {dif.charAt(0) + dif.slice(1).toLowerCase()}
+                  <svg class="w-4 h-4 ml-auto text-[#00A3FF] hidden check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+              ))
+            }
+          </div>
+        </div>
+
+        <!-- Filtro Categoría -->
+        <div class="relative" id="filter-categoria-wrapper">
+          <button id="btn-filter-categoria" class="filter-btn bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2" data-open="false">
+            <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            <span id="label-categoria">Categoría</span>
+            <svg class="w-3.5 h-3.5 transition-transform" id="chevron-categoria" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div id="dropdown-categoria" class="hidden absolute left-0 top-full mt-2 bg-[#111C2A] border border-white/10 rounded-xl shadow-2xl z-50 min-w-[200px] py-1.5 overflow-hidden max-h-64 overflow-y-auto">
+            {
+              CATEGORIAS_UNICAS.map((cat: any) => (
+                <button class="filter-option w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white flex items-center gap-2 transition-colors" data-filter="categoria" data-value={cat}>
+                  <svg class="w-3.5 h-3.5 text-slate-500 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/><path d="M12 2v2"/></svg>
+                  {cat}
+                  <svg class="w-4 h-4 ml-auto text-[#00A3FF] hidden check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+              ))
+            }
+          </div>
+        </div>
+
+        <!-- Filtro Instructor -->
+        <div class="relative" id="filter-instructor-wrapper">
+          <button id="btn-filter-instructor" class="filter-btn bg-[#1E293B] hover:bg-slate-700 text-slate-200 border border-[#334155] px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-2" data-open="false">
+            <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span id="label-instructor">Instructor</span>
+            <svg class="w-3.5 h-3.5 transition-transform" id="chevron-instructor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div id="dropdown-instructor" class="hidden absolute left-0 top-full mt-2 bg-[#111C2A] border border-white/10 rounded-xl shadow-2xl z-50 min-w-[220px] py-1.5 overflow-hidden max-h-64 overflow-y-auto">
+            {
+              instructoresConVideos.map((ins: any) => (
+                <button class="filter-option w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-white/5 hover:text-white flex items-center gap-2 transition-colors" data-filter="instructor" data-value={ins}>
+                  <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(ins)}&background=0F172A&color=fff&size=32`} alt={ins} class="w-5 h-5 rounded-full flex-shrink-0 border border-slate-600" />
+                  <span class="truncate max-w-[140px]">{ins}</span>
+                  <svg class="w-4 h-4 ml-auto text-[#00A3FF] hidden check-icon flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+              ))
+            }
+          </div>
+        </div>
+        
       </div>
 
       <!-- VISTA: Todos los vídeos -->
       <div id="view-todos">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
           {TALLERES.map((taller) => (
-            <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"} data-categoria={taller.categoria} class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block relative">
+            <a href={taller.id ? `/reproductor?id=${taller.id}` : "/reproductor"}
+              data-categoria={taller.categoria}
+              data-dificultad={taller.dificultad}
+              data-instructor={taller.instructor}
+              class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block relative">
               
               <div class="relative w-full aspect-[16/10] overflow-hidden">
                 <img src={taller.thumb} alt={taller.titulo} loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
@@ -815,5 +881,182 @@ const TALLERES = [...talleresDeBD];
     input.value = '';
     document.getElementById('col-panel')!.style.display = 'none';
   });
+
+  // ====================================================================
+  // ==== SISTEMA DE FILTROS CON DROPDOWNS ====
+  // ====================================================================
+
+  // Estado de filtros activos
+  const activeFilters: Record<string, string | null> = {
+    dificultad: null,
+    categoria: null,
+    instructor: null
+  };
+
+  const filterConfigs = [
+    { key: 'dificultad', btnId: 'btn-filter-dificultad', dropdownId: 'dropdown-dificultad', labelId: 'label-dificultad', chevronId: 'chevron-dificultad', defaultLabel: 'Dificultad' },
+    { key: 'categoria',  btnId: 'btn-filter-categoria',  dropdownId: 'dropdown-categoria',  labelId: 'label-categoria',  chevronId: 'chevron-categoria',  defaultLabel: 'Categoría' },
+    { key: 'instructor', btnId: 'btn-filter-instructor', dropdownId: 'dropdown-instructor', labelId: 'label-instructor', chevronId: 'chevron-instructor', defaultLabel: 'Instructor' },
+  ];
+
+  // Función principal de filtrado combinado (AND)
+  function applyAllFilters() {
+    const cards = document.querySelectorAll('[data-categoria][data-dificultad][data-instructor]');
+    let visibleCount = 0;
+
+    cards.forEach((card: Element) => {
+      const el = card as HTMLElement;
+      const catOk  = !activeFilters.categoria  || (el.dataset.categoria  || '').toLowerCase() === activeFilters.categoria!.toLowerCase();
+      const difOk  = !activeFilters.dificultad || (el.dataset.dificultad || '').toLowerCase() === activeFilters.dificultad!.toLowerCase();
+      const insOk  = !activeFilters.instructor || (el.dataset.instructor  || '').toLowerCase() === activeFilters.instructor!.toLowerCase();
+
+      if (catOk && difOk && insOk) {
+        el.style.display = '';
+        visibleCount++;
+      } else {
+        el.style.display = 'none';
+      }
+    });
+
+    // Mostrar estado vacío si ningún vídeo coincide
+    const emptyFilter = document.getElementById('filter-empty-state');
+    if (emptyFilter) emptyFilter.remove();
+    if (visibleCount === 0) {
+      const grid = document.querySelector('#view-todos .grid') as HTMLElement;
+      if (grid) {
+        const el = document.createElement('div');
+        el.id = 'filter-empty-state';
+        el.className = 'col-span-1 md:col-span-2 lg:col-span-3 flex flex-col items-center justify-center py-20 text-center';
+        el.innerHTML = `
+          <svg class="w-14 h-14 text-slate-700 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <h3 class="text-lg font-bold text-white mb-2">Sin resultados</h3>
+          <p class="text-slate-500 text-sm">No hay vídeos que coincidan con los filtros seleccionados.</p>
+        `;
+        grid.appendChild(el);
+      }
+    }
+
+    updateClearBtn();
+  }
+
+  // Mostrar/ocultar "Borrar todo"
+  function updateClearBtn() { /* chips eliminados — no-op */ }
+
+  // Limpiar un filtro individual
+  function clearFilter(key: string) {
+    activeFilters[key] = null;
+    const config = filterConfigs.find(c => c.key === key);
+    if (config) {
+      const label = document.getElementById(config.labelId);
+      const btn = document.getElementById(config.btnId);
+      if (label) label.textContent = config.defaultLabel;
+      if (btn) {
+        btn.classList.remove('!bg-[#00A3FF]/20', '!border-[#00A3FF]/50', '!text-[#00A3FF]');
+      }
+      // Desmarcar check en opciones
+      document.querySelectorAll(`[data-filter="${key}"]`).forEach(opt => {
+        opt.querySelector('.check-icon')?.classList.add('hidden');
+      });
+    }
+    applyAllFilters();
+  }
+
+  // Abrir/cerrar dropdown
+  function toggleDropdown(key: string) {
+    const config = filterConfigs.find(c => c.key === key)!;
+    const dropdown = document.getElementById(config.dropdownId);
+    const chevron = document.getElementById(config.chevronId);
+    const btn = document.getElementById(config.btnId);
+    if (!dropdown) return;
+
+    const isOpen = !dropdown.classList.contains('hidden');
+
+    // Cerrar todos primero
+    filterConfigs.forEach(c => {
+      document.getElementById(c.dropdownId)?.classList.add('hidden');
+      document.getElementById(c.chevronId)?.classList.remove('rotate-180');
+    });
+
+    if (!isOpen) {
+      dropdown.classList.remove('hidden');
+      chevron?.classList.add('rotate-180');
+    }
+  }
+
+  // Seleccionar una opción de filtro
+  function selectFilterOption(key: string, value: string) {
+    const config = filterConfigs.find(c => c.key === key)!;
+
+    // Toggle: si ya estaba activo, deseleccionar
+    if (activeFilters[key]?.toLowerCase() === value.toLowerCase()) {
+      clearFilter(key);
+      toggleDropdown(key); // cerrar
+      return;
+    }
+
+    activeFilters[key] = value;
+
+    // Actualizar label del botón
+    const label = document.getElementById(config.labelId);
+    const btn = document.getElementById(config.btnId);
+    if (label) label.textContent = value.length > 14 ? value.slice(0, 12) + '…' : value;
+    if (btn) btn.classList.add('!bg-[#00A3FF]/20', '!border-[#00A3FF]/50', '!text-[#00A3FF]');
+
+    // Actualizar checks
+    document.querySelectorAll(`[data-filter="${key}"]`).forEach(opt => {
+      const isSelected = (opt as HTMLElement).dataset.value?.toLowerCase() === value.toLowerCase();
+      opt.querySelector('.check-icon')?.classList.toggle('hidden', !isSelected);
+    });
+
+    // Cerrar dropdown
+    document.getElementById(config.dropdownId)?.classList.add('hidden');
+    document.getElementById(config.chevronId)?.classList.remove('rotate-180');
+
+    applyAllFilters();
+  }
+
+  // Conectar botones de filtro
+  filterConfigs.forEach(({ key, btnId }) => {
+    document.getElementById(btnId)?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleDropdown(key);
+    });
+  });
+
+  // Conectar opciones de cada dropdown
+  document.querySelectorAll('.filter-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+      const key = (opt as HTMLElement).dataset.filter!;
+      const value = (opt as HTMLElement).dataset.value!;
+      selectFilterOption(key, value);
+    });
+  });
+
+  // Botón "Borrar todo"
+  document.getElementById('btn-clear-filters')?.addEventListener('click', () => {
+    filterConfigs.forEach(c => clearFilter(c.key));
+    applyAllFilters();
+  });
+
+  // Cerrar dropdowns al hacer clic fuera
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement;
+    const insideFilter = target.closest('#filter-dificultad-wrapper, #filter-categoria-wrapper, #filter-instructor-wrapper');
+    if (!insideFilter) {
+      filterConfigs.forEach(c => {
+        document.getElementById(c.dropdownId)?.classList.add('hidden');
+        document.getElementById(c.chevronId)?.classList.remove('rotate-180');
+      });
+    }
+  });
+
+  // ==== INTEGRACIÓN CON FILTRO DE URL ?cat= ====
+  // Sobrescribir aplicarFiltroCatUrl para usar el nuevo sistema
+  const urlParamsNew = new URLSearchParams(window.location.search);
+  const catParamNew = urlParamsNew.get('cat');
+  if (catParamNew) {
+    // Pequena pausa para que el DOM esté listo
+    setTimeout(() => selectFilterOption('categoria', catParamNew.toUpperCase()), 50);
+  }
 
 </script>
