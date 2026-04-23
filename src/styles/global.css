@@ -142,4 +142,17 @@ body {
 }
 .leaflet-control {
   z-index: 3 !important;
+}
+
+/* ── Global Search ── */
+.gs-mark {
+  background: rgba(0, 163, 255, 0.25);
+  color: #00E5FF;
+  border-radius: 2px;
+  padding: 0 1px;
+  font-style: normal;
+}
+
+.gs-item.bg-white\/8 {
+  background: rgba(255, 255, 255, 0.06);
 }

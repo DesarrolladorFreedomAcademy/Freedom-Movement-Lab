@@ -45,11 +45,13 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
     </button>
     
     <div id="desktop-search-bar" class="relative hidden lg:block">
-      <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
       </svg>
-      <input type="text" id="desktop-search-input" placeholder={currentPath.startsWith('/comunidad') ? "    Buscar publicación..." : "    Buscar movimientos..."} data-context={currentPath.startsWith('/comunidad') ? 'comunidad' : 'catalogo'} autocomplete="off" class="input-dark w-64 pl-10 text-sm focus:outline-none focus:ring-1 focus:ring-[#00A3FF]" />
-      <ul id="desktop-search-results" class="hidden absolute top-full left-0 w-full mt-2 bg-[#182538] border border-white/10 rounded-xl shadow-2xl z-50 max-h-80 overflow-y-auto divide-y divide-white/5 text-sm"></ul>
+      <input type="text" id="desktop-search-input" placeholder="Buscar vídeos, categorías..." autocomplete="off" class="input-dark w-72 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-[#00A3FF]" />
+      <div id="desktop-search-results" class="hidden absolute top-full left-0 w-[420px] mt-2 bg-[#0d1825] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
+        <div id="dsr-inner" class="max-h-[480px] overflow-y-auto"></div>
+      </div>
     </div>
 
     <div class="relative hidden items-center" id="notifications-wrapper">
@@ -91,9 +93,11 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
   </div>
 
   <div id="mobile-search-container" class="hidden absolute inset-0 bg-[#0F172A] z-50 flex items-center px-4 gap-3">
-    <input type="text" id="mobile-search-input" placeholder={currentPath.startsWith('/comunidad') ? "Buscar publicación..." : "Buscar movimientos..."} data-context={currentPath.startsWith('/comunidad') ? 'comunidad' : 'catalogo'} autocomplete="off" class="flex-1 bg-transparent text-white focus:outline-none text-base h-full py-4" />
+    <input type="text" id="mobile-search-input" placeholder="Buscar vídeos, categorías..." autocomplete="off" class="flex-1 bg-transparent text-white focus:outline-none text-base h-full py-4" />
     <button id="btn-close-mobile-search" class="text-slate-400 hover:text-white shrink-0 p-2 text-sm font-bold">✕</button>
-    <ul id="mobile-search-results" class="hidden absolute top-full left-0 w-full bg-[#182538] border-b border-white/10 shadow-2xl z-50 max-h-[60vh] overflow-y-auto divide-y divide-white/5 text-sm"></ul>
+    <div id="mobile-search-results" class="hidden absolute top-full left-0 w-full bg-[#0d1825] border-b border-white/10 shadow-2xl z-50 max-h-[60vh] overflow-y-auto">
+      <div id="msr-inner" class=""></div>
+    </div>
   </div>
 </nav>
 
@@ -272,22 +276,249 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
     } catch (e) {}
   }
 
-  // Search
-  const searchInputs = document.querySelectorAll('input[data-context]');
-  searchInputs.forEach(inp => {
-    const el = inp as HTMLInputElement;
-    const res = document.getElementById(el.id === 'mobile-search-input' ? 'mobile-search-results' : 'desktop-search-results');
-    let t: any;
-    el.addEventListener('input', () => {
-      clearTimeout(t);
-      if (el.value.length < 2) { res?.classList.add('hidden'); return; }
-      t = setTimeout(async () => {
-        if (res) { res.innerHTML = '<li class="p-4 text-xs text-center text-slate-400">Buscando...</li>'; res.classList.remove('hidden'); }
-        const { data } = await supabase.from('forum_threads').select('id, title').ilike('title', `%${el.value}%`).limit(5);
-        if (res) res.innerHTML = data?.length ? data.map(d => `<a href="/comunidad/hilo/${d.id}" class="block p-3 hover:bg-white/5 text-sm text-slate-200">${d.title}</a>`).join('') : '<li class="p-4 text-xs text-center text-slate-500 italic">No hay resultados</li>';
-      }, 400);
+  // =============================================
+  // MOTOR DE BÚSQUEDA GLOBAL (custom, sin librerías)
+  // =============================================
+
+  // Normaliza una cadena: minúsculas + sin tildes
+  function normalize(str: string): string {
+    return str
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  // Resalta el término buscado dentro de un texto
+  function highlight(text: string, query: string): string {
+    if (!query) return text;
+    const normText = normalize(text);
+    const normQuery = normalize(query);
+    const idx = normText.indexOf(normQuery);
+    if (idx === -1) return text;
+    const before = text.slice(0, idx);
+    const match = text.slice(idx, idx + query.length);
+    const after = text.slice(idx + query.length);
+    return `${before}<mark class="gs-mark">${match}</mark>${after}`;
+  }
+
+  // Renderiza el panel de resultados
+  function renderResults(containerId: string, query: string, resultados: {
+    videos: any[], categorias: string[], instructores: string[]
+  }) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+
+    const total = resultados.videos.length + resultados.categorias.length + resultados.instructores.length;
+
+    if (total === 0) {
+      el.innerHTML = `
+        <div class="py-10 text-center">
+          <svg class="w-10 h-10 text-slate-600 mx-auto mb-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          <p class="text-sm font-semibold text-slate-400">Sin resultados para <span class="text-white">&laquo;${query}&raquo;</span></p>
+          <p class="text-xs text-slate-600 mt-1">Prueba con otro término</p>
+        </div>`;
+      return;
+    }
+
+    let html = '';
+
+    if (resultados.videos.length) {
+      html += `<div class="px-4 pt-4 pb-1"><span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Vídeos</span></div>`;
+      html += resultados.videos.map(v => `
+        <a href="/reproductor?id=${v.id}" class="gs-item flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors">
+          <div class="w-14 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-slate-800">
+            <img src="${v.thumb}" class="w-full h-full object-cover" loading="lazy" />
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-slate-100 truncate">${highlight(v.titulo, query)}</p>
+            <p class="text-[11px] text-slate-500 font-medium">${v.instructor || ''} ${v.dificultad ? '• ' + v.dificultad : ''}</p>
+          </div>
+          <svg class="w-4 h-4 text-slate-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </a>`).join('');
+    }
+
+    if (resultados.categorias.length) {
+      html += `<div class="px-4 pt-4 pb-1 ${resultados.videos.length ? 'border-t border-white/5' : ''}"><span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Categorías</span></div>`;
+      html += resultados.categorias.map(cat => `
+        <a href="/catalogo?cat=${encodeURIComponent(cat)}" class="gs-item flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors">
+          <div class="w-8 h-8 rounded-lg bg-[#00A3FF]/10 border border-[#00A3FF]/20 flex items-center justify-center flex-shrink-0">
+            <svg class="w-4 h-4 text-[#00A3FF]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/><path d="M12 2v2"/></svg>
+          </div>
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-slate-100">${highlight(cat, query)}</p>
+            <p class="text-[11px] text-slate-500">Explorar categoría</p>
+          </div>
+          <svg class="w-4 h-4 text-slate-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </a>`).join('');
+    }
+
+    if (resultados.instructores.length) {
+      html += `<div class="px-4 pt-4 pb-1 ${(resultados.videos.length || resultados.categorias.length) ? 'border-t border-white/5' : ''}"><span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Instructores</span></div>`;
+      html += resultados.instructores.map(ins => `
+        <a href="/catalogo?instructor=${encodeURIComponent(ins)}" class="gs-item flex items-center gap-3 px-4 py-2.5 hover:bg-white/5 transition-colors">
+          <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(ins)}&background=0F172A&color=fff&size=32" class="w-8 h-8 rounded-full border border-slate-700 flex-shrink-0" />
+          <div class="flex-1">
+            <p class="text-sm font-semibold text-slate-100">${highlight(ins, query)}</p>
+            <p class="text-[11px] text-slate-500">Ver vídeos del instructor</p>
+          </div>
+          <svg class="w-4 h-4 text-slate-600 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        </a>`).join('');
+    }
+
+    html += `<div class="px-4 py-3 border-t border-white/5 bg-white/[0.02]">
+      <a href="/catalogo" class="text-[11px] font-bold text-slate-400 hover:text-[#00A3FF] transition-colors flex items-center gap-1">
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Ver todo en el catálogo
+      </a>
+    </div>`;
+
+    el.innerHTML = html;
+
+    // Navegación por teclado — se gestiona en la función del input
+  }
+
+  // Estado del índice en memoria (cache)
+  let gsCache: { videos: any[]; categorias: string[]; instructores: string[] } | null = null;
+  let gsCacheTs = 0;
+  const GS_CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+
+  async function cargarIndice() {
+    const ahora = Date.now();
+    if (gsCache && ahora - gsCacheTs < GS_CACHE_TTL) return gsCache;
+
+    try {
+      // Cargar vídeos
+      const { data: vids } = await supabase
+        .from('videos')
+        .select('id, titulo, instructor, dificultad, categoria, mux_playback_id')
+        .eq('estado', 'listo')
+        .order('creado_en', { ascending: false })
+        .limit(200);
+
+      const videos = (vids || []).map((v: any) => ({
+        id: v.id,
+        titulo: v.titulo || '',
+        instructor: v.instructor || '',
+        dificultad: (v.dificultad || '').toUpperCase(),
+        categoria: v.categoria || '',
+        thumb: v.mux_playback_id
+          ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=1&width=200`
+          : 'https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=200&auto=format&fit=crop'
+      }));
+
+      // Categorías únicas
+      const categorias: string[] = [...new Set(
+        videos.map((v: any) => v.categoria).filter(Boolean)
+      )].sort() as string[];
+
+      // Instructores únicos
+      const instructores: string[] = [...new Set(
+        videos.map((v: any) => v.instructor).filter(Boolean)
+      )].sort() as string[];
+
+      gsCache = { videos, categorias, instructores };
+      gsCacheTs = ahora;
+      return gsCache;
+    } catch (e) {
+      return { videos: [], categorias: [], instructores: [] };
+    }
+  }
+
+  function buscarEnIndice(query: string, indice: { videos: any[]; categorias: string[]; instructores: string[] }) {
+    const q = normalize(query);
+    if (!q || q.length < 2) return { videos: [], categorias: [], instructores: [] };
+
+    const videos = indice.videos
+      .filter(v => normalize(v.titulo).includes(q) || normalize(v.instructor).includes(q))
+      .slice(0, 5);
+
+    const categorias = indice.categorias
+      .filter(c => normalize(c).includes(q))
+      .slice(0, 3);
+
+    const instructores = indice.instructores
+      .filter(i => normalize(i).includes(q))
+      .slice(0, 3);
+
+    return { videos, categorias, instructores };
+  }
+
+  // Configura un input de búsqueda y su panel de resultados
+  function setupSearch(inputId: string, panelId: string, innerContainerId: string) {
+    const input = document.getElementById(inputId) as HTMLInputElement | null;
+    const panel = document.getElementById(panelId);
+    const inner = document.getElementById(innerContainerId);
+    if (!input || !panel || !inner) return;
+
+    let debounceTimer: any;
+    let currentIndex = -1;
+    let items: HTMLElement[] = [];
+
+    function getItems() {
+      return Array.from(panel!.querySelectorAll('.gs-item')) as HTMLElement[];
+    }
+
+    function setActive(idx: number) {
+      items = getItems();
+      items.forEach((el, i) => {
+        el.classList.toggle('bg-white/8', i === idx);
+        el.classList.toggle('text-white', i === idx);
+      });
+      currentIndex = idx;
+    }
+
+    function showPanel() { panel!.classList.remove('hidden'); }
+    function hidePanel() { panel!.classList.add('hidden'); currentIndex = -1; }
+
+    input.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      const q = input.value.trim();
+      if (q.length < 2) { hidePanel(); return; }
+
+      // Skeleton de carga
+      inner.innerHTML = `<div class="py-6 flex items-center justify-center gap-2 text-slate-500 text-sm"><div class="w-4 h-4 border-2 border-[#00A3FF] border-t-transparent rounded-full animate-spin"></div>Buscando...</div>`;
+      showPanel();
+
+      debounceTimer = setTimeout(async () => {
+        const indice = await cargarIndice();
+        const resultados = buscarEnIndice(q, indice);
+        renderResults(innerContainerId, q, resultados);
+        showPanel();
+      }, 300);
     });
-  });
+
+    input.addEventListener('keydown', (e) => {
+      if (!panel!.classList.contains('hidden')) {
+        items = getItems();
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          setActive(Math.min(currentIndex + 1, items.length - 1));
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          setActive(Math.max(currentIndex - 1, 0));
+        } else if (e.key === 'Enter' && currentIndex >= 0) {
+          e.preventDefault();
+          items[currentIndex]?.click();
+        } else if (e.key === 'Escape') {
+          hidePanel();
+          input.blur();
+        }
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!panel!.contains(e.target as Node) && !input.contains(e.target as Node)) {
+        hidePanel();
+      }
+    });
+
+    input.addEventListener('focus', () => {
+      if (input.value.trim().length >= 2 && inner.innerHTML.trim()) showPanel();
+    });
+  }
+
+  setupSearch('desktop-search-input', 'desktop-search-results', 'dsr-inner');
+  setupSearch('mobile-search-input', 'mobile-search-results', 'msr-inner');
 
   // Mobile search toggle
   const msB = document.getElementById('mobile-search-btn');
