@@ -1,8 +1,0 @@
-[31m[1m10:58:26[22m [ERROR] [vite][39m [31m✗[39m Build failed in 27ms
-[commonjs--resolver] Failed to resolve entry for package "@tiptap/core". The package may have incorrect main/module/exports specified in its package.json.
-  [1mStack trace:[22m
-[2m    at packageEntryFailure (file:///C:/Users/razon/Documents/Freedom%20Movement%20Lab/node_modules/vite/dist/node/chunks/config.js:32816:32)
-    at tryNodeResolve (file:///C:/Users/razon/Documents/Freedom%20Movement%20Lab/node_modules/vite/dist/node/chunks/config.js:32716:70)
-    at Object.handler (file:///C:/Users/razon/Documents/Freedom%20Movement%20Lab/node_modules/vite/dist/node/chunks/config.js:33706:13)
-    at async PluginDriver.hookFirstAndGetPlugin (file:///C:/Users/razon/Documents/Freedom%20Movement%20Lab/node_modules/rollup/dist/es/shared/node-entry.js:22453:28)
-    at async ModuleLoader.resolveId (file:///C:/Users/razon/Documents/Freedom%20Movement%20Lab/node_modules/rollup/dist/es/shared/node-entry.js:21358:15)[22m

@@ -45,10 +45,10 @@ const currentPath = pathname.endsWith('/') && pathname.length > 1 ? pathname.sli
     </button>
     
     <div id="desktop-search-bar" class="relative hidden lg:block">
-      <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
       </svg>
-      <input type="text" id="desktop-search-input" placeholder="Buscar vídeos, categorías..." autocomplete="off" class="input-dark w-72 pl-10 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-[#00A3FF]" />
+      <input type="text" id="desktop-search-input" placeholder="Buscar..." autocomplete="off" class="input-dark w-72 pr-4 text-sm focus:outline-none focus:ring-1 focus:ring-[#00A3FF]" style="padding-left: 2.25rem;" />
       <div id="desktop-search-results" class="hidden absolute top-full left-0 w-[420px] mt-2 bg-[#0d1825] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden">
         <div id="dsr-inner" class="max-h-[480px] overflow-y-auto"></div>
       </div>

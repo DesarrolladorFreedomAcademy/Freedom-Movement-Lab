@@ -59,93 +59,95 @@ try {
   
   <div class="flex min-h-screen bg-[#0b1016]">
     
-    <!-- Sidebar / Filtros (Fijo a la izquierda en Desktop) -->
-    <aside class="w-64 flex-shrink-0 border-r border-white/5 bg-[#0F172A] hidden lg:block sticky top-[73px] h-[calc(100vh-73px)] overflow-y-auto">
-      <div class="py-6 px-4">
-        
-        <!-- Biblioteca -->
-        <div class="mb-8">
-          <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-3">BIBLIOTECA</h3>
-          <ul class="space-y-1">
-            <li>
-              <a href="#" id="sidebar-todos" class="sidebar-tab-link flex items-center gap-3 px-4 py-2.5 bg-[#00A3FF]/10 text-[#00A3FF] rounded-xl font-medium transition-colors">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                Lo más reciente
-              </a>
-            </li>
-            <li>
-              <a href="#" id="sidebar-siguiendo" class="sidebar-tab-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
-                Siguiendo
-                <span id="following-count" class="ml-auto text-[10px] font-bold text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded-full hidden">0</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.5 4l-4 8h6l-4 8"/></svg>
-                Popular
-              </a>
-            </li>
-            <li>
-              <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                Mis Favoritos
-              </a>
-            </li>
-          </ul>
-        </div>
-        
-        <!-- CATEGORIES -->
-        <div>
-          <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-3">CATEGORÍAS</h3>
-          <ul class="space-y-1" id="sidebar-categories">
-            <li>
-              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Tricking">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                Tricking
-              </a>
-            </li>
-            <li>
-              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="XMA">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                XMA
-              </a>
-            </li>
-            <li>
-              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Artes marciales">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
-                Artes marciales
-              </a>
-            </li>
-            <li>
-              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Parkour">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10 6 4 4-4 4"/><path d="M14 6h7v7"/><path d="m21 6-7 7"/><path d="m4 10 4-4 4 4"/></svg>
-                Parkour
-              </a>
-            </li>
-            <li>
-              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Calistenia">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 3v18"/><path d="M21 3v18"/></svg>
-                Calistenia
-              </a>
-            </li>
-            <li>
-              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Condicionamiento">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
-                Condicionamiento
-              </a>
-            </li>
-            <li>
-              <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="MindSet">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-4"/><path d="M12 2a9 9 0 0 0-9 9c0 5 9 11 9 11s9-6 9-11a9 9 0 0 0-9-9z"/><circle cx="12" cy="11" r="3"/></svg>
-                MindSet
-              </a>
-            </li>
-          </ul>
-        </div>
+    <!-- Sidebar wrapper: fills full page height with sidebar color -->
+    <div class="w-64 flex-shrink-0 border-r border-white/5 bg-[#0F172A] hidden lg:block relative">
+      <aside class="sticky top-[73px] h-[calc(100vh-73px)] overflow-y-auto">
+        <div class="py-6 px-4">
+          
+          <!-- Biblioteca -->
+          <div class="mb-8">
+            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-3">BIBLIOTECA</h3>
+            <ul class="space-y-1">
+              <li>
+                <a href="#" id="sidebar-todos" class="sidebar-tab-link flex items-center gap-3 px-4 py-2.5 bg-[#00A3FF]/10 text-[#00A3FF] rounded-xl font-medium transition-colors">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  Lo más reciente
+                </a>
+              </li>
+              <li>
+                <a href="#" id="sidebar-siguiendo" class="sidebar-tab-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+                  Siguiendo
+                  <span id="following-count" class="ml-auto text-[10px] font-bold text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded-full hidden">0</span>
+                </a>
+              </li>
+              <li>
+                <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.5 4l-4 8h6l-4 8"/></svg>
+                  Popular
+                </a>
+              </li>
+              <li>
+                <a href="#" class="flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  Mis Favoritos
+                </a>
+              </li>
+            </ul>
+          </div>
+          
+          <!-- CATEGORIES -->
+          <div>
+            <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-widest pl-4 mb-3">CATEGORÍAS</h3>
+            <ul class="space-y-1" id="sidebar-categories">
+              <li>
+                <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Tricking">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                  Tricking
+                </a>
+              </li>
+              <li>
+                <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="XMA">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                  XMA
+                </a>
+              </li>
+              <li>
+                <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Artes marciales">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14"/></svg>
+                  Artes marciales
+                </a>
+              </li>
+              <li>
+                <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Parkour">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m10 6 4 4-4 4"/><path d="M14 6h7v7"/><path d="m21 6-7 7"/><path d="m4 10 4-4 4 4"/></svg>
+                  Parkour
+                </a>
+              </li>
+              <li>
+                <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Calistenia">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11"/><path d="M6.5 17.5h11"/><path d="M3 3v18"/><path d="M21 3v18"/></svg>
+                  Calistenia
+                </a>
+              </li>
+              <li>
+                <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="Condicionamiento">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+                  Condicionamiento
+                </a>
+              </li>
+              <li>
+                <a href="#" class="sidebar-cat-link flex items-center gap-3 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 rounded-xl font-medium transition-colors" data-cat="MindSet">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22v-4"/><path d="M12 2a9 9 0 0 0-9 9c0 5 9 11 9 11s9-6 9-11a9 9 0 0 0-9-9z"/><circle cx="12" cy="11" r="3"/></svg>
+                  MindSet
+                </a>
+              </li>
+            </ul>
+          </div>
 
-      </div>
-    </aside>
+        </div>
+      </aside>
+    </div>
 
     <!-- Main Content -->
     <main class="flex-grow p-8 animate-fade-in relative max-w-[1200px]">
@@ -344,7 +346,7 @@ try {
   
   <footer class="border-t border-slate-800 bg-[#0F172A] relative z-10">
     <div class="container xl:max-w-7xl mx-auto px-8 py-8 flex items-center justify-between text-xs text-slate-500 font-medium">
-      <p>© 2026 Freedom movement lab. Rompe los límites.</p>
+      <p>© 2026 Freedom movement. Rompe los límites.</p>
       <div class="flex gap-6">
         <a href="/privacidad" class="hover:text-white transition-colors">Privacidad</a>
         <a href="/terminos" class="hover:text-white transition-colors">Términos</a>
