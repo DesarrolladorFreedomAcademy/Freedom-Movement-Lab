@@ -11,7 +11,7 @@ let videosGuardados = [];
 try {
   const { data, error } = await supabase
     .from('videos')
-    .select('id, titulo, instructor, dificultad, categoria, creado_en, mux_playback_id, mux_asset_id, duracion, miniatura_segundo')
+    .select('id, titulo, instructor, dificultad, categoria, creado_en, mux_playback_id, mux_asset_id, duracion, miniatura_segundo, es_premium')
     .eq('estado', 'listo')
     .order('creado_en', { ascending: false });
     
@@ -31,7 +31,8 @@ const talleresDeBD = videosGuardados.map((v: any) => ({
   duracion: v.duracion ? `${Math.floor(v.duracion / 60).toString().padStart(2, '0')}:${(v.duracion % 60).toString().padStart(2, '0')}` : "00:00",
   color_dif: v.dificultad === 'PRINCIPIANTE' ? 'bg-emerald-500 text-white' : (v.dificultad === 'EXPERTO' ? 'bg-rose-500 text-white' : 'bg-[#00A3FF] text-white'),
   thumb: v.mux_playback_id ? `https://image.mux.com/${v.mux_playback_id}/thumbnail.webp?time=${v.miniatura_segundo ?? 1}&width=600` : "https://images.unsplash.com/photo-1599058917212-97d14a72d4ae?q=80&w=800&auto=format&fit=crop",
-  categoria: v.categoria || 'Sin categoría'
+  categoria: v.categoria || 'Sin categoría',
+  es_premium: v.es_premium === true,
 }));
 
 const TALLERES = [...talleresDeBD];
@@ -244,6 +245,7 @@ try {
               data-categoria={taller.categoria}
               data-dificultad={taller.dificultad}
               data-instructor={taller.instructor}
+              data-premium={taller.es_premium ? 'true' : 'false'}
               class="bg-[#111C2A] rounded-2xl overflow-hidden border border-white/5 hover:border-[#00A3FF]/30 transition-all duration-300 group shadow-lg shadow-black/20 hover:shadow-[#00A3FF]/10 cursor-pointer block relative">
               
               <div class="relative w-full aspect-[16/10] overflow-hidden">
@@ -262,6 +264,11 @@ try {
                       <svg class="w-5 h-5 fill-current ml-0.5" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                    </div>
                 </div>
+                 <!-- Badge PRO: siempre visible en la miniatura -->
+                 <div class="video-pro-badge absolute top-2 left-2 z-30 hidden items-center gap-1 bg-black/70 backdrop-blur-sm border border-[#00A3FF]/40 rounded-full px-2.5 py-1 pointer-events-none">
+                   <svg class="w-3 h-3 text-[#00A3FF] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                   <span class="text-[9px] font-black text-[#00A3FF] uppercase tracking-widest">PRO</span>
+                 </div>
                 <!-- Botón añadir a colección -->
                 <button
                   class="btn-add-to-list absolute top-2 right-2 z-30 w-9 h-9 rounded-full bg-black/60 backdrop-blur border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:border-[#00A3FF]/50 hover:bg-[#00A3FF]/20 opacity-0 group-hover:opacity-100 transition-all"
@@ -1061,4 +1068,53 @@ try {
     setTimeout(() => selectFilterOption('categoria', catParamNew.toUpperCase()), 50);
   }
 
+  // ==== CONTROL DE ACCESO PREMIUM ====
+  // Comprueba si el usuario puede ver vídeos. Si no, bloquea los enlaces
+  // de cada tarjeta y muestra el badge PRO. Redirige a /precios al hacer clic.
+  async function aplicarControlAcceso() {
+    const { data: { session } } = await supabase.auth.getSession();
+
+    let tieneAcceso = false;
+
+    if (session?.user) {
+      const { data: perfil } = await supabase
+        .from('perfiles')
+        .select('rol, tiene_acceso')
+        .eq('id', session.user.id)
+        .maybeSingle();
+
+      // Staff siempre tiene acceso total
+      if (perfil?.rol === 'instructor' || perfil?.rol === 'admin') {
+        tieneAcceso = true;
+      } else {
+        tieneAcceso = perfil?.tiene_acceso === true;
+      }
+    }
+
+    if (tieneAcceso) return; // Sin restricciones para este usuario
+
+    // Sin acceso: actuar solo sobre las tarjetas con data-premium="true"
+    const tarjetas = document.querySelectorAll<HTMLAnchorElement>('[data-categoria][data-premium="true"]');
+    tarjetas.forEach(tarjeta => {
+      // Mostrar badge
+      const badge = tarjeta.querySelector('.video-pro-badge') as HTMLElement | null;
+      if (badge) {
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+      }
+
+      // Interceptar el click: en vez de navegar al reproductor, ir a /precios
+      tarjeta.addEventListener('click', (e) => {
+        // Permitir el botón de colección (tiene su propio handler)
+        const colBtn = (e.target as HTMLElement).closest('.btn-add-to-list');
+        if (colBtn) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        window.location.href = '/precios';
+      }, { capture: true });
+    });
+  }
+
+  aplicarControlAcceso();
 </script>
